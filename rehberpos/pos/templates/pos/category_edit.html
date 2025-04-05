@@ -1,0 +1,93 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}{{ category.name }} - Kategori Düzenle - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'pos:category_list' %}" class="text-decoration-none">
+                            <i class="fas fa-tags me-1"></i>Kategoriler
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active fw-medium">{{ category.name }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'pos:category_list' %}" class="btn btn-light px-4">
+                <i class="fas fa-arrow-left me-2"></i> Geri
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i> Kategori Düzenle
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.name.id_for_label }}" class="form-label fw-medium">Kategori Adı</label>
+                            {{ form.name }}
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label fw-medium">Açıklama</label>
+                            {{ form.description }}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i> Kaydet
+                            </button>
+                            <a href="{% url 'pos:category_list' %}" class="btn btn-light px-4">
+                                İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control {
+    padding: 0.75rem 1rem;
+    border-color: rgba(0,0,0,0.1);
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13,110,253,.15);
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+}
+</style>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form alanlarına Bootstrap sınıflarını ekle
+    const formInputs = document.querySelectorAll('input[type="text"], textarea');
+    formInputs.forEach(input => {
+        input.classList.add('form-control');
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %} 

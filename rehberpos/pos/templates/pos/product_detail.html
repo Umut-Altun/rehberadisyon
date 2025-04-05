@@ -1,0 +1,437 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-3 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'pos:product_list' %}" class="text-decoration-none text-primary">
+                            <i class=""></i>Ürünler
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active fw-medium">{{ product.name }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'pos:product_list' %}" class="btn btn-light px-4">
+                <i class="fas fa-arrow-left me-2"></i>Geri
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Ürün Bilgileri -->
+        <div class="col-xl-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="fas fa-info-circle text-primary me-2"></i>Ürün Bilgileri
+                    </h6>
+                </div>
+                {% if product.image %}
+                <div class="image-preview">
+                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                </div>
+                {% endif %}
+                <div class="card-body p-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small" style="width: 150px;">Ürün Adı:</th>
+                                <td class="border-0 fw-medium">{{ product.name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small">Kategori:</th>
+                                <td class="border-0">
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3">
+                                        <i class="fas fa-tag me-1"></i>{{ product.category.name }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small">Fiyat:</th>
+                                <td class="border-0">
+                                    <span class="fs-4 text-primary fw-bold">{{ product.price }} ₺</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small">Durum:</th>
+                                <td class="border-0">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input product-availability" type="checkbox" 
+                                               id="availability" 
+                                               data-product-id="{{ product.id }}"
+                                               {% if product.is_available %}checked{% endif %}>
+                                        <label class="form-check-label" for="availability">
+                                            {% if product.is_available %}
+                                            <span class="badge bg-success-subtle text-success rounded-pill px-3"><i class="fas fa-check-circle me-1"></i>Aktif</span>
+                                            {% else %}
+                                            <span class="badge bg-danger-subtle text-danger rounded-pill px-3"><i class="fas fa-times-circle me-1"></i>Pasif</span>
+                                            {% endif %}
+                                        </label>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% if product.description %}
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small">Açıklama:</th>
+                                <td class="border-0">{{ product.description }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Satış İstatistikleri -->
+        <div class="col-xl-8">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="stat-icon bg-primary-subtle text-primary rounded-circle me-3">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                                <div>
+                                    <h6 class="card-title mb-1 text-muted small">Toplam Satış Adedi</h6>
+                                    <h3 class="card-text text-primary mb-0">{{ total_ordered }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="stat-icon bg-success-subtle text-success rounded-circle me-3">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <div>
+                                    <h6 class="card-title mb-1 text-muted small">Toplam Gelir</h6>
+                                    <h3 class="card-text text-success mb-0">{{ total_revenue }} ₺</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sipariş Geçmişi -->
+            <div class="card shadow-sm border-0 mt-3">
+                <div class="card-header bg-white py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="fas fa-history text-primary me-2"></i>Sipariş Geçmişi
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="fw-medium py-3 ps-4 small">Tarih</th>
+                                    <th class="fw-medium py-3 small">Sipariş No</th>
+                                    <th class="fw-medium py-3 small">Müşteri</th>
+                                    <th class="fw-medium py-3 small">Adet</th>
+                                    <th class="fw-medium py-3 small">Birim Fiyat</th>
+                                    <th class="fw-medium py-3 pe-4 small">Toplam</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order_items %}
+                                <tr>
+                                    <td class="ps-4">{{ item.order.created_at|date:"d.m.Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'pos:order_detail' item.order.id %}" class="text-primary text-decoration-none">
+                                            #{{ item.order.id }}
+                                        </a>
+                                    </td>
+                                    <td>{{ item.order.customer.name|default:"-" }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ item.unit_price }} ₺</td>
+                                    <td class="pe-4 fw-medium text-primary">{{ item.get_total }} ₺</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="empty-state">
+                                            <div class="empty-state-icon">
+                                                <i class="fas fa-history fa-3x text-muted opacity-50"></i>
+                                            </div>
+                                            <h6 class="mt-4">Henüz sipariş bulunmuyor</h6>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Silme Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-trash text-danger me-2"></i>Ürünü Sil
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="avatar-danger mb-3">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <h5 class="mb-1">Silme İşlemini Onayla</h5>
+                    <p class="text-muted">
+                        <span class="fw-bold">{{ product.name }}</span> ürününü silmek istediğinize emin misiniz?
+                        <br>Bu işlem geri alınamaz!
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">İptal</button>
+                <form method="post" action="{% url 'pos:product_delete' product.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger px-4">Sil</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.08) !important;
+}
+
+.image-preview {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.image-preview img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.image-preview:hover img {
+    transform: scale(1.05);
+}
+
+.table td, .table th {
+    padding: 1rem;
+    border-color: rgba(0,0,0,0.05);
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0,0,0,0.015);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.form-check-input {
+    width: 3rem;
+    height: 1.5rem;
+    margin-top: 0.25rem;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+}
+
+.btn-light {
+    background-color: #f8f9fa;
+    border-color: #f8f9fa;
+}
+
+.btn-light:hover {
+    background-color: #e9ecef;
+    border-color: #e9ecef;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: #6c757d;
+}
+
+.breadcrumb-item.active {
+    color: #495057;
+}
+
+.empty-state {
+    padding: 20px;
+}
+
+.empty-state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    width: 80px;
+    background-color: rgba(0,0,0,0.03);
+    border-radius: 50%;
+}
+
+.avatar-danger {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 1rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+    }
+    
+    .image-preview img {
+        height: 200px;
+    }
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Ürün durumu değiştirme
+    document.querySelector('.product-availability').addEventListener('change', function() {
+        const productId = this.dataset.productId;
+        const label = this.nextElementSibling;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const newStatus = this.checked ? 'aktif' : 'pasif';
+        
+        showToast('info', `Ürün durumu güncelleniyor...`);
+        
+        fetch(`/urun/${productId}/durum/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `is_available=${this.checked}`
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                label.innerHTML = data.is_available ? 
+                    '<span class="badge bg-success-subtle text-success rounded-pill px-3"><i class="fas fa-check-circle me-1"></i>Aktif</span>' : 
+                    '<span class="badge bg-danger-subtle text-danger rounded-pill px-3"><i class="fas fa-times-circle me-1"></i>Pasif</span>';
+                showToast('success', `Ürün durumu ${newStatus} olarak güncellendi`);
+            } else {
+                this.checked = !this.checked;
+                showToast('danger', `Durum güncellenirken bir hata oluştu: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            this.checked = !this.checked;
+            showToast('danger', 'Durum güncellenirken bir hata oluştu');
+            console.error('Error:', error);
+        });
+    });
+
+    // Silme modalı için
+    const deleteForm = document.querySelector('#deleteModal form');
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            showToast('info', 'Ürün siliniyor...');
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', 'Ürün başarıyla silindi');
+                    setTimeout(() => {
+                        window.location.href = '{% url "pos:product_list" %}';
+                    }, 1000);
+                } else {
+                    showToast('danger', data.error || 'Ürün silinirken bir hata oluştu');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+                    modal.hide();
+                }
+            })
+            .catch(error => {
+                showToast('danger', 'Ürün silinirken bir hata oluştu');
+                console.error('Error:', error);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+                modal.hide();
+            });
+        });
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,196 @@
+{% extends "pos/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-3">
+    <!-- Başlık -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <h2 class="fw-bold h4 mb-0">{{ title }}</h2>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm rounded-4 border-0">
+                <div class="card-header bg-light rounded-top-4 border-0 py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle text-primary me-2"></i>
+                        <h5 class="card-title mb-0 fw-bold">İşletme Bilgileri</h5>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.name.id_for_label }}" class="form-label fw-medium">
+                                <i class="fas fa-signature text-primary me-2"></i>İşletme Adı <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback d-block mt-2">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ form.name.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.address.id_for_label }}" class="form-label fw-medium">
+                                <i class="fas fa-map-marker-alt text-warning me-2"></i>Adres
+                            </label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                                <div class="invalid-feedback d-block mt-2">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ form.address.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label fw-medium">
+                                <i class="fas fa-phone text-success me-2"></i>Telefon
+                            </label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                                <div class="invalid-feedback d-block mt-2">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ form.phone.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="{{ form.logo.id_for_label }}" class="form-label fw-medium">
+                                <i class="fas fa-image text-info me-2"></i>Logo
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-upload"></i>
+                                </span>
+                                {{ form.logo }}
+                            </div>
+                            {% if form.logo.errors %}
+                                <div class="invalid-feedback d-block mt-2">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ form.logo.errors.0 }}
+                                </div>
+                            {% else %}
+                                <div class="form-text text-muted mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>İsteğe bağlı: İşletmenizin logosunu yükleyin
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Kaydet</button>
+                            <a href="{% url 'pos:index' %}" class="btn btn-secondary">İptal</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm rounded-4 border-0 bg-light">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3 d-inline-block mb-3">
+                            <i class="fas fa-lightbulb fa-2x"></i>
+                        </div>
+                        <h5 class="fw-bold">İşletme Bilgileri Hakkında</h5>
+                    </div>
+                    
+                    <div class="info-items">
+                        <div class="info-item d-flex align-items-start mb-3">
+                            <div class="info-icon bg-primary bg-opacity-10 rounded-circle p-2 me-3 mt-1">
+                                <i class="fas fa-check text-primary"></i>
+                            </div>
+                            <div>
+                                <p class="mb-0 text-muted">İşletme adınız fatura ve siparişlerde görünecektir.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item d-flex align-items-start mb-3">
+                            <div class="info-icon bg-primary bg-opacity-10 rounded-circle p-2 me-3 mt-1">
+                                <i class="fas fa-check text-primary"></i>
+                            </div>
+                            <div>
+                                <p class="mb-0 text-muted">Logo yüklemek isteğe bağlıdır. Logo fatura ve makbuzlarda kullanılabilir.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="info-item d-flex align-items-start mb-3">
+                            <div class="info-icon bg-primary bg-opacity-10 rounded-circle p-2 me-3 mt-1">
+                                <i class="fas fa-check text-primary"></i>
+                            </div>
+                            <div>
+                                <p class="mb-0 text-muted">Telefon ve adres bilgileriniz iletişim amaçlı kullanılacaktır.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Form stilleri */
+.form-control, .form-select {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border-color: rgba(0,0,0,0.1);
+    background-color: #f9f9f9;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    border-color: rgba(13, 110, 253, 0.4);
+    background-color: #fff;
+}
+
+textarea.form-control {
+    min-height: 100px;
+}
+
+.input-group-text {
+    border-radius: 0.5rem 0 0 0.5rem;
+    border-color: rgba(0,0,0,0.1);
+}
+
+.input-group .form-control {
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+/* İkon stilleri */
+.info-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+@media (max-width: 992px) {
+    .col-lg-4 {
+        margin-top: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .d-flex.justify-content-between.align-items-center.mt-5 {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .d-flex.justify-content-between.align-items-center.mt-5 > div:first-child {
+        align-self: flex-start;
+    }
+}
+</style>
+
+{{ block.super }}
+
+{% endblock %} 
