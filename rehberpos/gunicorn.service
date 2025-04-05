@@ -1,0 +1,16 @@
+[Unit]
+Description=Gunicorn daemon for RehberPOS
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/rehberadisyon/rehberpos
+EnvironmentFile=/var/www/rehberadisyon/rehberpos/.env
+ExecStart=/var/www/rehberadisyon/rehberpos/venv/bin/gunicorn \
+    --config /var/www/rehberadisyon/rehberpos/gunicorn.conf.py \
+    --bind unix:/var/www/rehberadisyon/rehberpos/restaurant_management.sock \
+    restaurant_management.wsgi:application
+
+[Install]
+WantedBy=multi-user.target
