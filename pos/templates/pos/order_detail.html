@@ -1,0 +1,293 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Sipariş #{{ order.id }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item">
+                        <a href="{% if order.order_type == 'takeaway' %}{% url 'pos:takeaway_orders' %}{% else %}{% url 'pos:table_list' %}{% endif %}" class="text-decoration-none text-primary">
+                            {% if order.order_type == 'takeaway' %}Paket Siparişler{% else %}Masalar{% endif %}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active fw-medium">Sipariş #{{ order.id }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            {% if order.status != 'completed' and order.status != 'cancelled' %}
+                <a href="{% url 'pos:payment_create' order.id %}" class="btn btn-primary px-4">
+                    <i class="fas fa-money-bill me-2"></i>Ödeme Al
+                </a>
+            {% endif %}
+            <a href="{% url 'pos:order_list' %}" class="btn btn-light px-4">
+                <i class="fas fa-arrow-left me-2"></i>Siparişlere Dön
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Sipariş Bilgileri -->
+        <div class="col-xl-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>Sipariş Bilgileri
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small" style="width: 150px;">Sipariş No:</th>
+                                <td class="border-0 fw-medium">#{{ order.id }}</td>
+                            </tr>
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small">Tarih:</th>
+                                <td class="border-0">{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small">Durum:</th>
+                                <td class="border-0">
+                                    {% if order.status == 'completed' %}
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-3">
+                                        <i class="fas fa-check-circle me-1"></i>{{ order.get_status_display }}
+                                    </span>
+                                    {% elif order.status == 'cancelled' %}
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-3">
+                                        <i class="fas fa-times-circle me-1"></i>{{ order.get_status_display }}
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-warning-subtle text-warning rounded-pill px-3">
+                                        <i class="fas fa-clock me-1"></i>{{ order.get_status_display }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small">Sipariş Tipi:</th>
+                                <td class="border-0">
+                                    {% if order.order_type == 'table' %}
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">
+                                        <i class="fas fa-chair me-1"></i>Masa Siparişi
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3">
+                                        <i class="fas fa-shopping-bag me-1"></i>Paket Sipariş
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if order.order_type == 'table' %}
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small">Masa:</th>
+                                <td class="border-0">{% if order.table %}Masa {{ order.table.number }}{% else %}-{% endif %}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small">Adres:</th>
+                                <td class="border-0">{{ order.customer.address|default:"-" }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small">Müşteri:</th>
+                                <td class="border-0">{{ order.customer.name|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="border-0 ps-0 text-muted small">Toplam Tutar:</th>
+                                <td class="border-0">
+                                    <span class="fs-4 text-success fw-bold">{{ order.total_amount }} ₺</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sipariş Kalemleri -->
+        <div class="col-xl-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0 fw-bold">
+                            <i class="fas fa-list me-2 text-primary"></i>Sipariş Kalemleri
+                        </h6>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3">{{ total_items }} Ürün</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="fw-medium py-3 ps-4 small">Ürün</th>
+                                    <th class="fw-medium py-3 small">Adet</th>
+                                    <th class="fw-medium py-3 small">Birim Fiyat</th>
+                                    <th class="fw-medium py-3 small">Toplam</th>
+                                    <th class="fw-medium py-3 pe-4 small">Not</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items.all %}
+                                <tr>
+                                    <td class="fw-medium ps-4">{{ item.product.name }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ item.unit_price }} ₺</td>
+                                    <td class="fw-medium text-primary">{{ item.get_total }} ₺</td>
+                                    <td class="text-muted pe-4">{{ item.notes|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="3" class="text-end py-3 pe-3">Toplam:</th>
+                                    <th class="py-3 text-success fw-bold">{{ order.total_amount }} ₺</th>
+                                    <td class="py-3"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ödeme Geçmişi -->
+    {% if order.payments.exists %}
+    <div class="card shadow-sm border-0 mt-3">
+        <div class="card-header bg-white py-3">
+            <h6 class="card-title mb-0 fw-bold">
+                <i class="fas fa-history me-2 text-primary"></i>Ödeme Geçmişi
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="fw-medium py-3 ps-4 small">Tarih</th>
+                            <th class="fw-medium py-3 small">Tutar</th>
+                            <th class="fw-medium py-3 small">Ödeme Tipi</th>
+                            <th class="fw-medium py-3 pe-4 small">Durum</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in order.payments.all %}
+                        <tr>
+                            <td class="ps-4">{{ payment.created_at|date:"d.m.Y H:i" }}</td>
+                            <td class="fw-medium text-primary">{{ payment.amount }} ₺</td>
+                            <td>{{ payment.get_payment_type_display }}</td>
+                            <td class="pe-4">
+                                {% if payment.status == 'completed' %}
+                                <span class="badge bg-success-subtle text-success rounded-pill px-3">
+                                    <i class="fas fa-check-circle me-1"></i>{{ payment.get_status_display }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning-subtle text-warning rounded-pill px-3">
+                                    <i class="fas fa-clock me-1"></i>{{ payment.get_status_display }}
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.card {
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.08) !important;
+}
+
+.table td, .table th {
+    padding: 1rem;
+    border-color: rgba(0,0,0,0.05);
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0,0,0,0.015);
+}
+
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+}
+
+.btn-light {
+    background-color: #f8f9fa;
+    border-color: #f8f9fa;
+}
+
+.btn-light:hover {
+    background-color: #e9ecef;
+    border-color: #e9ecef;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: #6c757d;
+}
+
+.breadcrumb-item.active {
+    color: #495057;
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 1rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .table td, .table th {
+        padding: 0.75rem;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+    }
+    
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %} 

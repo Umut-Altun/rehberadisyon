@@ -1,0 +1,408 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Siparişler - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold h4 mb-0">
+            Siparişler
+        </h5>
+    </div>
+
+    <!-- Filtreler -->
+    <div class="card shadow-sm mb-3 border-0">
+        <div class="card-body p-3">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label small fw-medium">Durum</label>
+                    <select name="status" class="form-select">
+                        <option value="">Tümü</option>
+                        {% for status, label in status_choices %}
+                        <option value="{{ status }}" {% if request.GET.status == status %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-medium">Tarih</label>
+                    <input type="date" name="date" class="form-control" value="{{ request.GET.date }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-medium">Sipariş Tipi</label>
+                    <select name="order_type" class="form-select">
+                        <option value="">Tümü</option>
+                        {% for type, label in order_type_choices %}
+                        <option value="{{ type }}" {% if request.GET.order_type == type %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-filter me-1"></i>Filtrele
+                    </button>
+                    <a href="{% url 'pos:order_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>Temizle
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Siparişler Tablosu -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0 fw-bold">
+                    <i class="fas fa-list me-2 text-primary"></i>Sipariş Listesi
+                </h6>
+                <span class="badge bg-primary rounded-pill">{{ orders.paginator.count }} Sipariş</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="table align-middle table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Sipariş No</th>
+                            <th>Tarih</th>
+                            <th>Müşteri/Masa</th>
+                            <th>Tutar</th>
+                            <th>Durum</th>
+                            <th class="text-end">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td><span class="fw-medium">#{{ order.id }}</span></td>
+                            <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                {% if order.table %}
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2">
+                                        <i class="fas fa-chair me-1"></i>Masa {{ order.table.number }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-2">
+                                        <i class="fas fa-user me-1"></i>{{ order.customer.name|default:"-" }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td><span class="fw-bold">{{ order.total_amount }} ₺</span></td>
+                            <td>
+                                {% if order.status == 'completed' %}
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">
+                                        <i class="fas fa-check-circle me-1"></i>{{ order.get_status_display }}
+                                    </span>
+                                {% elif order.status == 'preparing' %}
+                                    <span class="badge bg-info-subtle text-info rounded-pill px-3 py-2">
+                                        <i class="fas fa-hourglass-half me-1"></i>{{ order.get_status_display }}
+                                    </span>
+                                {% elif order.status == 'cancelled' %}
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2">
+                                        <i class="fas fa-times-circle me-1"></i>{{ order.get_status_display }}
+                                    </span>
+                                {% elif order.status == 'ready' %}
+                                    <span class="badge bg-warning-subtle text-warning rounded-pill px-3 py-2">
+                                        <i class="fas fa-utensils me-1"></i>{{ order.get_status_display }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2">
+                                        <i class="fas fa-clock me-1"></i>{{ order.get_status_display }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <a href="{% url 'pos:order_detail' order.id %}" class="btn btn-sm btn-outline-primary" title="Detay">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if order.status == 'pending' or order.status == 'preparing' or order.status == 'ready' %}
+                                    <a href="{% url 'pos:payment_create' order.id %}" class="btn btn-sm btn-outline-success" title="Ödeme Al">
+                                        <i class="fas fa-money-bill"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if order.status == 'completed' %}
+                                    <a href="{% url 'pos:payment_detail' order.payment_set.first.id %}" class="btn btn-sm btn-outline-info" title="Ödeme Detayları">
+                                        <i class="fas fa-receipt"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-clipboard-check fa-3x text-muted opacity-50"></i>
+                                    </div>
+                                    <h6 class="mt-3">Henüz sipariş bulunmuyor</h6>
+                                    <p class="text-muted mb-3">Yeni bir sipariş oluşturmak için "Yeni Sipariş" butonuna tıklayın.</p>
+                                    <a href="{% url 'pos:order_create' %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-plus me-1"></i>Yeni Sipariş
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Sayfalama -->
+        {% if orders.paginator.num_pages > 1 %}
+        <div class="card-footer bg-white py-3">
+            <nav aria-label="Sayfalama">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    {% if orders.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}{% if request.GET.order_type %}&order_type={{ request.GET.order_type }}{% endif %}" aria-label="İlk">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ orders.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}{% if request.GET.order_type %}&order_type={{ request.GET.order_type }}{% endif %}" aria-label="Önceki">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in orders.paginator.page_range %}
+                        {% if orders.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > orders.number|add:'-3' and num < orders.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}{% if request.GET.order_type %}&order_type={{ request.GET.order_type }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if orders.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ orders.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}{% if request.GET.order_type %}&order_type={{ request.GET.order_type }}{% endif %}" aria-label="Sonraki">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ orders.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}{% if request.GET.order_type %}&order_type={{ request.GET.order_type }}{% endif %}" aria-label="Son">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.table-container {
+    max-height: 70vh;
+    overflow-y: auto;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.table-responsive {
+    margin-bottom: 0;
+}
+
+/* Tablo başlığını sabitleme */
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 1;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 0.75rem 1rem;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0,0,0,0.015);
+}
+
+.table tbody td {
+    padding: 0.75rem 1rem;
+    border: none;
+}
+
+.empty-state {
+    padding: 2rem 1rem;
+}
+
+.empty-state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    width: 80px;
+    background-color: rgba(0,0,0,0.03);
+    border-radius: 50%;
+}
+
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Sayfalama stilleri */
+.pagination {
+    margin-bottom: 0;
+}
+
+.page-link {
+    padding: 0.5rem 0.75rem;
+    color: var(--bs-primary);
+    border: none;
+    margin: 0 0.25rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.page-link:hover {
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary);
+}
+
+.page-item.active .page-link {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+/* Scrollbar stilleri */
+.table-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.02);
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.15);
+    border-radius: 6px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.25);
+}
+
+/* Mobil optimizasyonları */
+@media (max-width: 768px) {
+    .table-container {
+        max-height: calc(100vh - 200px);
+    }
+    
+    .table th, .table td {
+        padding: 0.6rem 0.75rem;
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+        padding: 0.35rem 0.65rem;
+    }
+    
+    .page-link {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+    
+    .d-flex.justify-content-between.align-items-center a.btn,
+    .d-flex.justify-content-between.align-items-center div a.btn {
+        align-self: stretch;
+        text-align: center;
+    }
+    
+    .badge.rounded-pill {
+        display: none;
+    }
+    
+    .table-responsive {
+        border-radius: 0.5rem;
+    }
+    
+    .form-label {
+        margin-bottom: 0.25rem;
+    }
+    
+    .row.g-3 {
+        row-gap: 0.5rem !important;
+    }
+    
+    .col-md-3.d-flex {
+        margin-top: 1rem;
+    }
+    
+    .col-md-3.d-flex button,
+    .col-md-3.d-flex a {
+        flex: 1;
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .page-link {
+        margin: 0.125rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tarih filtresini otomatik submit et
+    document.querySelector('input[name="date"]').addEventListener('change', function() {
+        let selectedDate = this.value;
+        this.form.submit();
+        if (selectedDate) {
+            showToast('info', `${selectedDate} tarihine göre filtreleniyor...`);
+        } else {
+            showToast('info', 'Tarih filtresi kaldırıldı');
+        }
+    });
+    
+    // Select filtreleri otomatik submit et
+    document.querySelectorAll('select[name="status"], select[name="order_type"]').forEach(function(select) {
+        select.addEventListener('change', function() {
+            let selectedText = this.options[this.selectedIndex].text;
+            this.form.submit();
+            if (this.value) {
+                showToast('info', `${selectedText} durumuna göre filtreleniyor...`);
+            } else {
+                showToast('info', `${this.name === 'status' ? 'Durum' : 'Sipariş tipi'} filtresi kaldırıldı`);
+            }
+        });
+    });
+
+    // URL'den mesaj parametresini kontrol et
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterApplied = urlParams.has('status') || urlParams.has('date') || urlParams.has('order_type');
+        
+        if (filterApplied) {
+            const totalOrders = document.querySelector('.badge.bg-primary').textContent.split(' ')[0];
+            showToast('success', `Filtreleme sonucu ${totalOrders} sipariş bulundu`);
+        }
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,64 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Kullanıcı Silme</h1>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-user-times me-1"></i>
+            Kullanıcı Silme Onayı
+        </div>
+        <div class="card-body">
+            <form method="post" id="deleteUserForm">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash me-1"></i>
+                    Evet, Sil
+                </button>
+                <a href="{% url 'pos:user_list' %}" class="btn btn-secondary" id="cancelButton">
+                    <i class="fas fa-times me-1"></i>
+                    İptal
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sayfa yüklendiğinde uyarı göster
+    showToast('warning', '<i class="fas fa-exclamation-triangle me-2"></i>"{{ user.username }}" kullanıcısını silmek istediğinizden emin misiniz?');
+    
+    // Form submit olayını yakala
+    const deleteForm = document.getElementById('deleteUserForm');
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            showToast('info', '<i class="fas fa-spinner fa-spin me-2"></i>Kullanıcı siliniyor...');
+            
+            setTimeout(() => {
+                this.submit();
+            }, 1000);
+        });
+    }
+    
+    // İptal butonuna tıklandığında
+    const cancelButton = document.getElementById('cancelButton');
+    if (cancelButton) {
+        cancelButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            showToast('info', 'İşlem iptal ediliyor...');
+            
+            setTimeout(() => {
+                window.location.href = this.href;
+            }, 500);
+        });
+    }
+});
+</script>
+{% endblock %} 

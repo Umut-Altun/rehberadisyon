@@ -1,0 +1,243 @@
+{% extends 'pos/base.html' %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Başlık ve Excel Butonu -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <h1 class="h4 mb-0 fw-bold">Personel Satış Raporu</h1>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="?export=excel{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" 
+               class="btn btn-success shadow-sm px-4">
+                <i class="fas fa-file-excel me-2"></i>Excel'e Aktar
+            </a>
+            <a href="{% url 'pos:reports' %}" class="btn btn-primary shadow-sm px-4">
+                <i class="fas fa-arrow-left me-2"></i> Raporlara Dön
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <!-- Tarih Filtresi -->
+            <form method="get" class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label fw-medium">Başlangıç Tarihi</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0">
+                            <i class="fas fa-calendar-alt text-muted"></i>
+                        </span>
+                        <input type="date" name="start_date" class="form-control border-0 bg-light shadow-none" value="{{ start_date|default:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-medium">Bitiş Tarihi</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0">
+                            <i class="fas fa-calendar-alt text-muted"></i>
+                        </span>
+                        <input type="date" name="end_date" class="form-control border-0 bg-light shadow-none" value="{{ end_date|default:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                        <i class="fas fa-filter me-2"></i>Filtrele
+                    </button>
+                </div>
+            </form>
+
+            <!-- Özet Kartları -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 position-relative overflow-hidden">
+                        <div class="position-absolute top-0 end-0 mt-2 me-3">
+                            <i class="fas fa-money-bill-wave fa-3x text-info opacity-15"></i>
+                        </div>
+                        <div class="card-body p-4">
+                            <h6 class="text-info fw-bold text-uppercase mb-2 small">Toplam Satış</h6>
+                            <h3 class="display-6 fw-bold mb-0">{{ total_sales.grand_total|default:'0.00' }} ₺</h3>
+                            <div class="mt-2">
+                                <span class="badge bg-info bg-opacity-10 text-info">Dönem Toplamı</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 position-relative overflow-hidden">
+                        <div class="position-absolute top-0 end-0 mt-2 me-3">
+                            <i class="fas fa-shopping-cart fa-3x text-success opacity-15"></i>
+                        </div>
+                        <div class="card-body p-4">
+                            <h6 class="text-success fw-bold text-uppercase mb-2 small">Toplam Sipariş</h6>
+                            <h3 class="display-6 fw-bold mb-0">{{ total_sales.total_orders|default:'0' }}</h3>
+                            <div class="mt-2">
+                                <span class="badge bg-success bg-opacity-10 text-success">Adet</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personel Satış Tablosu -->
+            <div class="card border-0 shadow-sm rounded-4 mt-4">
+                <div class="card-header bg-light border-0 py-3 rounded-top-4">
+                    <div class="d-flex align-items-center">
+                        <div class="icon-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3">
+                            <i class="fas fa-users text-primary"></i>
+                        </div>
+                        <h5 class="card-title mb-0 fw-bold">Personel Performansı</h5>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4 py-3">Personel</th>
+                                    <th class="py-3">Toplam Satış</th>
+                                    <th class="py-3">Sipariş Sayısı</th>
+                                    <th class="pe-4 py-3">Ortalama Sipariş Tutarı</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for staff in staff_sales %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-3">
+                                                {{ staff.staff__first_name|default:staff.staff__username|make_list|first|upper }}
+                                            </div>
+                                            <span class="fw-medium">{{ staff.staff__first_name }} {{ staff.staff__last_name|default:staff.staff__username }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="fw-bold text-primary">{{ staff.total_sales|floatformat:2 }} ₺</td>
+                                    <td>
+                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                                            {{ staff.order_count }} Sipariş
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold text-success pe-4">{{ staff.avg_order_amount|floatformat:2 }} ₺</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5">
+                                        <div class="py-4">
+                                            <div class="mb-3">
+                                                <i class="fas fa-inbox fa-3x text-muted opacity-50"></i>
+                                            </div>
+                                            <p class="text-muted mb-0">Henüz satış kaydı bulunmamaktadır.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.icon-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.opacity-15 {
+    opacity: 0.15;
+}
+
+.display-6 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.table th {
+    font-weight: 600;
+    color: #555;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.badge {
+    font-weight: 500;
+}
+
+.rounded-4 {
+    border-radius: 0.5rem;
+}
+
+.rounded-top-4 {
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tarih filtre formu
+    const filterForm = document.querySelector('form');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const startDate = this.querySelector('input[name="start_date"]').value;
+            const endDate = this.querySelector('input[name="end_date"]').value;
+            
+            // Tarih kontrolü
+            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                showToast('danger', 'Başlangıç tarihi, bitiş tarihinden büyük olamaz!');
+                return;
+            }
+            
+            showToast('info', 'Rapor filtreleniyor...');
+            this.submit();
+        });
+    }
+    
+    // Excel'e aktarma butonu
+    const excelBtn = document.querySelector('a[href*="export=excel"]');
+    if (excelBtn) {
+        excelBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            showToast('info', 'Excel dosyası hazırlanıyor...');
+            setTimeout(() => {
+                window.location.href = this.href;
+                showToast('success', 'Excel dosyası indiriliyor');
+            }, 1000);
+        });
+    }
+    
+    // Sayfa yüklendiğinde filtre varsa bilgi göster
+    const urlParams = new URLSearchParams(window.location.search);
+    const startDate = urlParams.get('start_date');
+    const endDate = urlParams.get('end_date');
+    
+    if (startDate && endDate) {
+        const formattedStartDate = new Date(startDate).toLocaleDateString('tr-TR');
+        const formattedEndDate = new Date(endDate).toLocaleDateString('tr-TR');
+        showToast('info', `${formattedStartDate} - ${formattedEndDate} tarihleri arası rapor görüntüleniyor`);
+    }
+});
+</script>
+{% endblock %} 

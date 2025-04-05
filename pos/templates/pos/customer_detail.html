@@ -1,0 +1,547 @@
+{% extends 'pos/base.html' %}
+{% load pos_extras %}
+
+{% block title %}{{ customer.name }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-3">
+    <!-- Breadcrumb -->
+    <div class="row mb-3">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'pos:customer_list' %}" class="text-decoration-none">
+                            <i class=""></i> Müşteriler
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active text-primary">{{ customer.name }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Sol Taraf - Müşteri Bilgileri -->
+        <div class="col-md-4">
+            <!-- Müşteri Bilgileri Kartı -->
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex align-items-center">
+                        <div class="customer-avatar me-3">
+                            {{ customer.name|make_list|first|upper }}
+                        </div>
+                        <div>
+                            <h5 class="card-title mb-1">{{ customer.name }}</h5>
+                            <small class="text-muted">{{ customer.phone }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% if customer.address %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-circle bg-info-subtle text-info me-3">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Adres</small>
+                                    <strong>{{ customer.address }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-circle bg-primary-subtle text-primary me-3">
+                                    <i class="fas fa-calendar"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Kayıt Tarihi</small>
+                                    <strong>{{ customer.created_at|date:"d.m.Y H:i" }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white py-3">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" 
+                                data-bs-target="#editCustomerModal">
+                            <i class="fas fa-edit me-2"></i> Düzenle
+                        </button>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" 
+                                data-bs-target="#deleteCustomerModal">
+                            <i class="fas fa-trash me-2"></i> Sil
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- İstatistikler Kartı -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2 text-primary"></i> İstatistikler
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted d-block">Toplam Sipariş</small>
+                                    <strong>{{ customer.total_orders }}</strong>
+                                </div>
+                                <div class="icon-circle bg-primary-subtle text-primary">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted d-block">Toplam Harcama</small>
+                                    <strong>{{ customer.total_spent|floatformat:2 }} ₺</strong>
+                                </div>
+                                <div class="icon-circle bg-success-subtle text-success">
+                                    <i class="fas fa-money-bill"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted d-block">Ortalama Sipariş Tutarı</small>
+                                    <strong>{{ customer.average_order_amount|floatformat:2 }} ₺</strong>
+                                </div>
+                                <div class="icon-circle bg-info-subtle text-info">
+                                    <i class="fas fa-calculator"></i>
+                                </div>
+                            </div>
+                        </div>
+                        {% if customer.last_order %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted d-block">Son Sipariş Tarihi</small>
+                                    <strong>{{ customer.last_order.created_at|date:"d.m.Y H:i" }}</strong>
+                                </div>
+                                <div class="icon-circle bg-warning-subtle text-warning">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sağ Taraf - Sipariş Geçmişi -->
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">
+                                <i class="fas fa-history me-2 text-primary"></i> Son Siparişler
+                            </h5>
+                            <small class="text-muted">Son 5 sipariş gösteriliyor</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'pos:order_create' %}?customer={{ customer.id }}&type=takeaway" 
+                               class="btn btn-success">
+                                <i class="fas fa-plus me-2"></i> Yeni Sipariş
+                            </a>
+                            {% if customer.total_orders > 5 %}
+                            <a href="{% url 'pos:order_list' %}?customer={{ customer.id }}" 
+                               class="btn btn-outline-primary">
+                                <i class="fas fa-list me-2"></i> Tüm Siparişler
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Sipariş No</th>
+                                    <th>Tarih</th>
+                                    <th>Masa</th>
+                                    <th>Tutar</th>
+                                    <th>Durum</th>
+                                    <th class="text-end">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in recent_orders %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="order-number me-3">#{{ order.id }}</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-primary-subtle text-primary me-2">
+                                                <i class="fas fa-calendar"></i>
+                                            </div>
+                                            <div>
+                                                <div>{{ order.created_at|date:"d.m.Y" }}</div>
+                                                <small class="text-muted">{{ order.created_at|date:"H:i" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if order.table %}
+                                        <a href="{% url 'pos:table_detail' order.table.id %}" class="table-link">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-circle bg-info-subtle text-info me-2">
+                                                    <i class="fas fa-chair"></i>
+                                                </div>
+                                                <div>
+                                                    <div>Masa {{ order.table.number }}</div>
+                                                    <small class="text-muted">{{ order.table.name }}</small>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        {% else %}
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-secondary-subtle text-secondary me-2">
+                                                <i class="fas fa-box"></i>
+                                            </div>
+                                            <div>
+                                                <div>Paket Sipariş</div>
+                                                <small class="text-muted">Paket Servis</small>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-success-subtle text-success me-2">
+                                                <i class="fas fa-money-bill"></i>
+                                            </div>
+                                            <div>
+                                                <div>{{ order.total_amount }} ₺</div>
+                                                <small class="text-muted">{{ order.items.count }} Ürün</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge order-status {{ order.status }}">
+                                            {{ order.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group">
+                                            <a href="{% url 'pos:order_detail' order.id %}" 
+                                               class="btn btn-sm btn-primary" title="Sipariş Detayı">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="empty-state">
+                                            <div class="empty-state-icon">
+                                                <i class="fas fa-shopping-cart fa-3x text-muted opacity-50"></i>
+                                            </div>
+                                            <h6 class="mt-4">Henüz sipariş bulunmuyor</h6>
+                                            <p class="text-muted mb-4">Yeni bir sipariş oluşturmak için "Yeni Sipariş" butonuna tıklayın.</p>
+                                            <a href="{% url 'pos:order_create' %}?customer={{ customer.id }}&type=takeaway" 
+                                               class="btn btn-success">
+                                                <i class="fas fa-plus me-2"></i> Yeni Sipariş
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Müşteri Avatar */
+.customer-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    background-color: var(--bs-primary);
+    color: white;
+    font-size: 20px;
+    transition: all 0.2s ease;
+}
+
+/* İkon çemberleri */
+.icon-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+/* Tablo stilleri */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.table thead th {
+    font-weight: 600;
+    color: #444;
+    background-color: white;
+    padding: 15px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.table tbody td {
+    padding: 15px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Sipariş numarası */
+.order-number {
+    font-weight: 600;
+    color: var(--bs-primary);
+}
+
+/* Masa linki */
+.table-link {
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+}
+
+.table-link:hover {
+    color: var(--bs-primary);
+}
+
+/* Sipariş durumu rozeti */
+.order-status {
+    padding: 6px 10px;
+    border-radius: 50px;
+    font-weight: 500;
+}
+
+.order-status.pending {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: #ffc107;
+}
+
+.order-status.processing {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+.order-status.completed {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: #198754;
+}
+
+.order-status.cancelled {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+/* Boş durum */
+.empty-state {
+    padding: 40px 20px;
+}
+
+.empty-state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    width: 80px;
+    background-color: rgba(0,0,0,0.03);
+    border-radius: 50%;
+}
+
+/* Hover efekti */
+.table-hover tbody tr {
+    transition: all 0.15s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.02);
+}
+
+/* Responsive düzenlemeler */
+@media (max-width: 992px) {
+    .customer-avatar {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .icon-circle {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .table thead th, 
+    .table tbody td {
+        padding: 12px 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .customer-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+    
+    .icon-circle {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+    
+    .order-number {
+        font-size: 0.875rem;
+    }
+}
+</style>
+
+<!-- Müşteri Düzenleme Modal -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-edit me-2 text-warning"></i>Müşteri Düzenle
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'pos:customer_edit' customer.id %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="customer_name" class="form-label fw-medium">Ad Soyad</label>
+                        <input type="text" class="form-control" id="customer_name" name="name" 
+                               value="{{ customer.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customer_phone" class="form-label fw-medium">Telefon</label>
+                        <input type="tel" class="form-control" id="customer_phone" name="phone" 
+                               value="{{ customer.phone }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customer_address" class="form-label fw-medium">Adres</label>
+                        <textarea class="form-control" id="customer_address" name="address" 
+                                  rows="2">{{ customer.address }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-warning px-4">Güncelle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Müşteri Silme Modal -->
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-trash me-2 text-danger"></i>Müşteri Sil
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="avatar-danger mb-3">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <h5 class="mb-1">Silme İşlemini Onayla</h5>
+                    <p class="text-muted">
+                        <strong>{{ customer.name }}</strong> isimli müşteriyi silmek istediğinize emin misiniz?
+                        <br>Bu işlem geri alınamaz ve müşterinin tüm sipariş geçmişi silinecektir.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                <form method="post" action="{% url 'pos:customer_delete' customer.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger px-4">Sil</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Silme modalı için avatar */
+.avatar-danger {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+</style>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Müşteri düzenleme formu gönderildiğinde
+    const editCustomerForm = document.querySelector('#editCustomerModal form');
+    if (editCustomerForm) {
+        editCustomerForm.addEventListener('submit', function() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editCustomerModal'));
+            if (modal) {
+                modal.hide();
+            }
+        });
+    }
+
+    // Müşteri silme formu gönderildiğinde
+    const deleteCustomerForm = document.querySelector('#deleteCustomerModal form');
+    if (deleteCustomerForm) {
+        deleteCustomerForm.addEventListener('submit', function() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteCustomerModal'));
+            if (modal) {
+                modal.hide();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+{% endblock %} 

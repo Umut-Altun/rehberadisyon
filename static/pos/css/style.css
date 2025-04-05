@@ -1,0 +1,900 @@
+/* General Styles */
+body {
+    font-family: "Nunito Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    background-color: var(--body-color);
+    color: var(--text-color);
+    transition: background-color .4s;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.container-fluid {
+    max-width: 1800px;
+    padding: 0.5rem;
+    transition: padding-left .4s;
+}
+
+.footer {
+    margin-top: auto;
+    padding: 0.5rem 0 !important;
+}
+
+/*=============== VARIABLES CSS ===============*/
+:root {
+    --header-height: 3.5rem;
+
+    /*========== Colors ==========*/
+    /*Color mode HSL(hue, saturation, lightness)*/
+    --first-color: hsl(228, 85%, 63%);
+    --first-color-rgb: 91, 143, 249; /* rgba(91, 143, 249, 1) */
+    --first-color-light: hsl(228, 85%, 95%);
+    --first-color-dark: hsl(228, 85%, 53%);
+    --second-color: hsl(164, 80%, 45%);
+    --second-color-light: hsl(164, 80%, 95%);
+    --title-color: hsl(228, 18%, 16%);
+    --text-color: hsl(228, 8%, 56%);
+    --body-color: hsl(228, 100%, 99%);
+    --shadow-color: hsla(228, 80%, 4%, .1);
+    --menu-hover-bg: hsl(228, 85%, 97%);
+    --menu-active-bg: hsl(228, 85%, 95%);
+
+    /*========== Font and typography ==========*/
+    /*.5rem = 8px | 1rem = 16px ...*/
+    --body-font: "Nunito Sans", system-ui;
+    --normal-font-size: .938rem;
+    --smaller-font-size: .75rem;
+    --tiny-font-size: .75rem;
+
+    /*========== Font weight ==========*/
+    --font-regular: 400;
+    --font-semi-bold: 600;
+
+    /*========== z index ==========*/
+    --z-tooltip: 10;
+    --z-fixed: 100;
+}
+
+/*========== Responsive typography ==========*/
+@media screen and (min-width: 1150px) {
+    :root {
+        --normal-font-size: 1rem;
+        --smaller-font-size: .813rem;
+    }
+}
+
+/*=============== VARIABLES DARK THEME ===============*/
+body.dark-theme {
+    --first-color: hsl(228, 70%, 63%);
+    --first-color-rgb: 107, 151, 237; /* rgba(107, 151, 237, 1) - karanlık tema için biraz daha açık ton */
+    --first-color-light: hsl(228, 30%, 25%);
+    --first-color-dark: hsl(228, 70%, 70%);
+    --second-color: hsl(164, 70%, 45%);
+    --second-color-light: hsl(164, 40%, 20%);
+    --title-color: hsl(228, 18%, 96%);
+    --text-color: hsl(228, 12%, 61%);
+    --body-color: hsl(228, 24%, 16%);
+    --shadow-color: hsla(228, 80%, 4%, .3);
+    --menu-hover-bg: hsl(228, 24%, 20%);
+    --menu-active-bg: hsl(228, 24%, 22%);
+}
+
+/*========== 
+    Color changes in some parts of 
+    the website, in dark theme
+==========*/
+.dark-theme .sidebar__content::-webkit-scrollbar {
+    background-color: hsl(228, 16%, 30%);
+}
+
+.dark-theme .sidebar__content::-webkit-scrollbar-thumb {
+    background-color: hsl(228, 16%, 40%);
+}
+
+/* Divider dark theme style */
+.dark-theme .divider-line {
+    background: linear-gradient(
+        to right,
+        transparent,
+        rgba(var(--first-color-rgb), 0.2),
+        transparent
+    );
+}
+
+.dark-theme .divider-line::before {
+    box-shadow: 0 0 6px var(--first-color);
+}
+
+/*=============== HEADER ===============*/
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--z-fixed);
+    margin: .75rem;
+    will-change: padding-left;
+}
+
+.header__container {
+    width: 100%;
+    height: var(--header-height);
+    background-color: var(--body-color);
+    box-shadow: 0 4px 20px var(--shadow-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-inline: 1.5rem;
+    border-radius: 1rem;
+    transition: background-color .4s;
+}
+
+/* Logo Styling */
+.header__logo {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+}
+
+.header__logo:hover {
+    transform: translateY(-2px);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo-text-main {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--title-color);
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+}
+
+.logo-text-highlight {
+    color: var(--first-color);
+    font-weight: 800;
+}
+
+.logo-text-sub {
+    font-size: 0.7rem;
+    color: var(--text-color);
+    opacity: 0.8;
+    font-weight: 500;
+    margin-top: -2px;
+}
+
+.header__toggle {
+    font-size: 1.5rem;
+    color: var(--title-color);
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    transition: transform 0.3s;
+}
+
+.header__toggle:hover {
+    color: var(--first-color);
+    transform: scale(1.1);
+}
+
+/*=============== SIDEBAR ===============*/
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: var(--z-fixed);
+    width: 316px;
+    background-color: var(--body-color);
+    box-shadow: 2px 0 24px var(--shadow-color);
+    padding-block: 1.5rem;
+    margin: .75rem;
+    border-radius: 1rem;
+    transition: width .4s, background-color .4s;
+}
+
+.sidebar__container, 
+.sidebar__content {
+    display: flex;
+    flex-direction: column;
+    row-gap: 3rem;
+}
+
+.sidebar__container {
+    height: 100%;
+    overflow: hidden;
+}
+
+.sidebar__user {
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    align-items: center;
+    column-gap: 1rem;
+    padding-left: 2rem;
+}
+
+.sidebar__img {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    justify-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar__img img {
+    position: absolute;
+    width: 50px;
+    bottom: -1px;
+}
+
+.sidebar__info h3 {
+    font-size: var(--normal-font-size);
+    color: var(--title-color);
+    transition: color .4s;
+    font-weight: var(--font-semi-bold);
+}
+
+.sidebar__info span {
+    font-size: var(--smaller-font-size);
+    color: var(--text-color);
+}
+
+.sidebar__content {
+    overflow: hidden auto;
+}
+
+.sidebar__content::-webkit-scrollbar {
+    width: .4rem;
+    background-color: hsl(228, 8%, 85%);
+}
+
+.sidebar__content::-webkit-scrollbar-thumb {
+    background-color: hsl(228, 8%, 75%);
+    border-radius: 4px;
+}
+
+.sidebar__title {
+    width: max-content;
+    font-size: var(--tiny-font-size);
+    font-weight: var(--font-semi-bold);
+    padding-left: 2rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+    letter-spacing: 1px;
+}
+
+.sidebar__list, 
+.sidebar__actions {
+    display: grid;
+    row-gap: 0.5rem;
+}
+
+.sidebar__link {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    align-items: center;
+    column-gap: 1rem;
+    color: var(--text-color);
+    padding: 0.75rem 2rem;
+    transition: color .3s, background-color .3s;
+    border-radius: 0 8px 8px 0;
+    text-decoration: none;
+}
+
+.sidebar__link i {
+    font-size: 1.35rem;
+    color: var(--first-color);
+    transition: transform 0.3s, color 0.3s;
+}
+
+.sidebar__link span {
+    font-weight: var(--font-semi-bold);
+    transition: color 0.3s;
+}
+
+.sidebar__link:hover {
+    color: var(--title-color);
+    background-color: var(--menu-hover-bg);
+}
+
+.sidebar__link:hover i {
+    transform: translateX(3px);
+}
+
+.sidebar__actions {
+    margin-top: 0;
+    padding: 0 1rem 0 0;
+    display: grid;
+    row-gap: 0.5rem;
+}
+
+.sidebar__action-button {
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    padding: 0;
+    width: 100%;
+    text-align: left;
+}
+
+/* Tema butonu için özel stil */
+.sidebar__action-button .sidebar__link {
+    padding: 0.75rem 2rem;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    align-items: center;
+    column-gap: 1rem;
+    text-decoration: none;
+}
+
+/* Tema butonu ve çıkış butonu için özel icon rengi */
+.sidebar__action-button:first-child .sidebar__link i {
+    color: var(--first-color);
+}
+
+.sidebar__action-button:last-child .sidebar__link i {
+    color: #ef5350;
+}
+
+/* Butonların hover durumları */
+.sidebar__action-button .sidebar__link:hover {
+    color: var(--title-color);
+    background-color: var(--menu-hover-bg);
+}
+
+.sidebar__action-button:last-child .sidebar__link:hover {
+    color: #ef5350;
+    background-color: rgba(239, 83, 80, 0.1);
+}
+
+/* Özel sidebar button kenar stilleri */
+.sidebar__action-button .sidebar__link,
+.sidebar__action-button .sidebar__link div {
+    border-left: 4px solid transparent;
+    border-radius: 0 8px 8px 0;
+}
+
+.sidebar__action-button:first-child .sidebar__link {
+    border-left-color: var(--first-color-light);
+}
+
+.sidebar__action-button:last-child .sidebar__link div {
+    border-left-color: rgba(239, 83, 80, 0.3);
+}
+
+/* Hizalama düzeltmeleri */
+.sidebar__action-button .sidebar__link,
+.sidebar__action-button .sidebar__link div {
+    padding-left: 2rem;
+}
+
+/* For mobile devices - sidebar starts hidden */
+@media screen and (max-width: 1149px) {
+    .sidebar {
+        left: -120%; 
+        transition: left .4s, width .4s, background-color .4s;
+        width: 280px; /* Sabit genişlik ver */
+    }
+    
+    /* When sidebar is shown */
+    .show-sidebar {
+        left: 0;
+    }
+    
+    /* Fix for mobile sidebar text visibility */
+    .sidebar__info, 
+    .sidebar__link span,
+    .sidebar__action-button .sidebar__link span {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        white-space: nowrap;
+    }
+    
+    .sidebar__link,
+    .sidebar__action-button .sidebar__link,
+    .sidebar__action-button .sidebar__link div {
+        display: grid;
+        grid-template-columns: repeat(2, max-content);
+        padding-left: 2rem;
+        text-decoration: none;
+        align-items: center;
+        column-gap: 1rem;
+    }
+    
+    .sidebar__title {
+        visibility: visible !important;
+        display: block !important;
+    }
+}
+
+/* For large devices */
+@media screen and (min-width: 1150px) {
+    .header {
+        margin: 1rem;
+        padding-left: 340px;
+        transition: padding .4s;
+    }
+    
+    /* Header should adjust when sidebar is collapsed */
+    body.sidebar-collapsed .header {
+        padding-left: 114px;
+    }
+    
+    .header__container {
+        height: calc(var(--header-height) + 2rem);
+        padding-inline: 2rem;
+    }
+    .header__logo {
+        order: 1;
+    }
+
+    /* Default expanded sidebar */
+    .sidebar {
+        width: 316px;
+        margin: 1rem;
+    }
+    
+    .sidebar__info, 
+    .sidebar__link span {
+        transition: opacity .4s;
+    }
+    
+    .sidebar__user, 
+    .sidebar__title {
+        transition: padding .4s;
+    }
+
+    /* Collapsed sidebar */
+    body.sidebar-collapsed .sidebar {
+        width: 90px;
+    }
+    
+    body.sidebar-collapsed .sidebar__user {
+        padding-left: 1.25rem;
+    }
+    
+    body.sidebar-collapsed .sidebar__title {
+        padding-left: 0;
+        margin-inline: auto;
+    }
+    
+    body.sidebar-collapsed .sidebar__info, 
+    body.sidebar-collapsed .sidebar__link span {
+        opacity: 0;
+    }
+
+    /* Main content padding for expanded sidebar */
+    #main.container-fluid {
+        padding-left: 340px;
+        margin-top: calc(var(--header-height) + 3rem);
+        padding-top: 1rem !important;
+        transition: padding .4s, margin-top .4s;
+    }
+
+    /* Main content padding for collapsed sidebar */
+    body.sidebar-collapsed #main.container-fluid {
+        padding-left: 114px;
+    }
+}
+
+/* Active link */
+.active-link {
+    color: var(--first-color-dark) !important;
+    background-color: var(--menu-active-bg);
+    font-weight: var(--font-semi-bold);
+}
+
+.active-link i {
+    color: var(--first-color-dark);
+}
+
+.active-link::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: var(--first-color);
+    border-radius: 0 2px 2px 0;
+}
+
+/* Table Grid */
+.table-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.4rem;
+}
+
+.table-card {
+    flex: 0 0 calc(16.666% - 0.4rem); /* 6 masa yan yana */
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 0.4rem;
+    text-align: center;
+    background-color: #fff;
+}
+
+.table-card h5 {
+    font-size: 0.95rem;
+    margin-bottom: 0.3rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.table-card p {
+    font-size: 0.8rem;
+    margin-bottom: 0.3rem;
+}
+
+.table-card .badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+}
+
+.table-card i.fa-3x {
+    font-size: 1.6rem !important;
+    margin-bottom: 0.3rem;
+}
+
+.table-card .btn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+}
+
+.table-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.table-card.occupied {
+    background-color: #ffebee;
+    border-color: #ef5350;
+}
+
+.table-card.available {
+    background-color: #e8f5e9;
+    border-color: #66bb6a;
+}
+
+/* Product Grid */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem;
+}
+
+.product-card {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.product-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+}
+
+.product-info {
+    padding: 0.75rem;
+}
+
+/* Order List */
+.order-status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.order-status.pending {
+    background-color: #fff3e0;
+    color: #e65100;
+}
+
+.order-status.preparing {
+    background-color: #e3f2fd;
+    color: #1565c0;
+}
+
+.order-status.ready {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.order-status.delivered {
+    background-color: #f5f5f5;
+    color: #616161;
+}
+
+.order-status.cancelled {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* Kitchen Display */
+.kitchen-orders {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.75rem;
+    padding: 0.75rem;
+}
+
+.kitchen-order {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.kitchen-order.urgent {
+    border-color: #ef5350;
+    background-color: #ffebee;
+}
+
+/* Reports */
+.report-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.report-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+/* Form Elements */
+.form-control, .form-select {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.95rem;
+}
+
+.btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.95rem;
+}
+
+/* Card Components */
+.card {
+    margin-bottom: 0.75rem;
+}
+
+.card-header {
+    padding: 0.75rem;
+}
+
+.card-body {
+    padding: 0.75rem;
+}
+
+/* Table Components */
+.table th, .table td {
+    padding: 0.5rem;
+    font-size: 0.95rem;
+}
+
+/*=============== BREAKPOINTS ===============*/
+/* For small devices */
+@media screen and (max-width: 360px) {
+    .header__container {
+        padding-inline: 1rem;
+    }
+
+    .sidebar {
+        width: 260px; /* Daha dar sidebar */
+        padding-right: 0.5rem;
+    }
+    
+    /* Fontları biraz küçültüyoruz */
+    .sidebar__info h3, 
+    .sidebar__link span,
+    .sidebar__action-button .sidebar__link span {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Kompakt hizalama */
+    .sidebar__user,
+    .sidebar__link,
+    .sidebar__action-button .sidebar__link,
+    .sidebar__action-button .sidebar__link div {
+        padding-left: 1.25rem !important;
+    }
+    
+    .sidebar__title {
+        padding-left: 1.25rem !important;
+        font-size: 0.7rem !important;
+    }
+}
+
+/* Sidebar için HTML özelliği */
+html[class*="mobile_mode"] .sidebar.show-sidebar .sidebar__link span, 
+html[class*="mobile_mode"] .sidebar.show-sidebar .sidebar__info,
+html[class*="mobile_mode"] .sidebar.show-sidebar .sidebar__title,
+html[class*="mobile_mode"] .sidebar.show-sidebar .sidebar__action-button .sidebar__link span {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Main content padding adjustments */
+#main.container-fluid {
+    margin-top: calc(var(--header-height) + 2rem);
+    padding-top: 1rem !important;
+}
+
+/* Responsive Adjustments for Tables */
+@media (max-width: 1400px) {
+    .table-card {
+        flex: 0 0 calc(20% - 0.4rem); /* 5 masa yan yana */
+    }
+}
+
+@media (max-width: 1200px) {
+    .table-card {
+        flex: 0 0 calc(25% - 0.4rem); /* 4 masa yan yana */
+    }
+}
+
+@media (max-width: 992px) {
+    .table-card {
+        flex: 0 0 calc(33.333% - 0.4rem); /* 3 masa yan yana */
+    }
+}
+
+@media (max-width: 768px) {
+    .table-card {
+        flex: 0 0 calc(50% - 0.3rem); /* 2 masa yan yana */
+    }
+    
+    .table-grid {
+        gap: 0.3rem;
+        padding: 0.3rem;
+    }
+}
+
+/* Preload class for preventing transition flickering */
+.preload * {
+    transition: none !important;
+}
+
+/* Minimize sidebar flash on page load */
+html.loading .sidebar,
+html.loading .header,
+html.loading #main.container-fluid {
+    transition: none !important;
+}
+
+body.sidebar-collapsed .sidebar__info,
+body.sidebar-collapsed .sidebar__link span {
+    display: none;
+    opacity: 0;
+    visibility: hidden;
+}
+
+@media screen and (min-width: 1150px) {
+    /* Immediately applied styles for collapsed sidebar */
+    body.sidebar-collapsed .sidebar {
+        width: 90px !important;
+    }
+    
+    body.sidebar-collapsed .header {
+        padding-left: 114px !important;
+    }
+    
+    body.sidebar-collapsed #main.container-fluid {
+        padding-left: 114px !important;
+    }
+    
+    body.sidebar-collapsed .sidebar__info,
+    body.sidebar-collapsed .sidebar__link span {
+        visibility: hidden; 
+        opacity: 0;
+        display: none;
+    }
+}
+
+/* Additional Bootstrap compatibility fixes */
+.dropdown-menu {
+    z-index: calc(var(--z-fixed) + 10);
+}
+
+/* Hide original theme button */
+#themeToggle {
+    display: none;
+}
+
+/* Form stilleri */
+.logout-form {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+/* Sidebar Divider Styling */
+.sidebar__divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 2rem;
+    margin: 0;
+}
+
+/* İkinci ayırıcı için (sidebar__actions öncesi) özel stil */
+.sidebar__actions:before {
+    content: "";
+    display: block;
+    margin-bottom: 0.1rem;
+}
+
+.divider-line {
+    position: relative;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(
+        to right,
+        transparent,
+        rgba(var(--first-color-rgb), 0.3),
+        transparent
+    );
+}
+
+.divider-line::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--first-color);
+    box-shadow: 0 0 8px var(--first-color);
+}
+
+/* Collapsed sidebar için ayırıcı stili */
+body.sidebar-collapsed .sidebar__divider {
+    padding: 0.5rem 0.5rem;
+}
+
+body.sidebar-collapsed .divider-line::before {
+    width: 4px;
+    height: 4px;
+}
+
+/* Main content padding adjustments */
+
+/* Tema butonu üzerindeki ayırıcı çizgi - Kompakt versiyon */
+.sidebar__divider--compact {
+    padding: 0;
+    margin: 0 0 2px 0; /* Sadece alt kısımda 2px boşluk */
+    height: 1px;
+}
+
+.sidebar__divider--compact .divider-line {
+    margin: 0;
+    height: 1px;
+}

@@ -1,0 +1,639 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Raporlar - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-3">
+    <!-- Başlık ve Temizleme Butonu -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <h2 class="fw-bold h4 mb-0">Raporlar</h2>
+        </div>
+        {% if user.is_superuser %}
+        <button type="button" class="btn btn-danger shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#cleanupModal">
+            <i class="fas fa-trash-alt me-2"></i>Veritabanını Temizle
+        </button>
+        {% endif %}
+    </div>
+
+    {% if cleanup_success %}
+    <div class="alert alert-success alert-dismissible fade show mb-4 rounded-3 shadow-sm" role="alert">
+        <i class="fas fa-check-circle me-2"></i>{{ cleanup_message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <!-- Temizleme Modal -->
+    <div class="modal fade" id="cleanupModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content rounded-4 shadow">
+                <div class="modal-header bg-danger text-white rounded-top-3">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Veritabanı Temizleme
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    
+                    <div class="row g-4">
+                        <!-- Silinecek Veriler -->
+                        <div class="col-md-6">
+                            <div class="card border-danger h-100 rounded-4 shadow-sm">
+                                <div class="card-header bg-danger text-white rounded-top-3">
+                                    <i class="fas fa-trash-alt me-2"></i>Silinecek Veriler
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush rounded-3">
+                                        <li class="list-group-item text-danger d-flex align-items-center py-3">
+                                            <i class="fas fa-times-circle me-2"></i>Tüm Siparişler
+                                        </li>
+                                        <li class="list-group-item text-danger d-flex align-items-center py-3">
+                                            <i class="fas fa-times-circle me-2"></i>Tüm Sipariş Detayları
+                                        </li>
+                                        <li class="list-group-item text-danger d-flex align-items-center py-3">
+                                            <i class="fas fa-times-circle me-2"></i>Tüm Ödemeler
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Korunacak Veriler -->
+                        <div class="col-md-6">
+                            <div class="card border-success h-100 rounded-4 shadow-sm">
+                                <div class="card-header bg-success text-white rounded-top-3">
+                                    <i class="fas fa-shield-alt me-2"></i>Korunacak Veriler
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush rounded-3">
+                                        <li class="list-group-item text-success d-flex align-items-center py-3">
+                                            <i class="fas fa-check-circle me-2"></i>Masalar
+                                        </li>
+                                        <li class="list-group-item text-success d-flex align-items-center py-3">
+                                            <i class="fas fa-check-circle me-2"></i>Müşteriler
+                                        </li>
+                                        <li class="list-group-item text-success d-flex align-items-center py-3">
+                                            <i class="fas fa-check-circle me-2"></i>Ürünler
+                                        </li>
+                                        <li class="list-group-item text-success d-flex align-items-center py-3">
+                                            <i class="fas fa-check-circle me-2"></i>Kategoriler
+                                        </li>
+                                        <li class="list-group-item text-success d-flex align-items-center py-3">
+                                            <i class="fas fa-check-circle me-2"></i>Kullanıcılar
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form action="{% url 'pos:database_cleanup' %}" method="POST" class="mt-4" id="cleanupForm">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="confirmText" class="form-label fw-bold">Onay Metni</label>
+                            <input type="text" class="form-control form-control-lg rounded-3" id="confirmText" name="confirm_text" 
+                                   placeholder="Silme işlemini onaylamak için 'onaylıyorum' yazın">
+                            <div class="form-text text-muted mt-2">
+                                <i class="fas fa-info-circle me-1"></i>Silme işlemini onaylamak için "onaylıyorum" yazmanız gerekmektedir.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>İptal
+                    </button>
+                    <button type="submit" form="cleanupForm" class="btn btn-danger rounded-pill" id="confirmCleanup" disabled>
+                        <i class="fas fa-trash-alt me-2"></i>Verileri Sil
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Özet Kartları -->
+    <div class="row g-3 mb-4">
+        <!-- Günlük Satışlar -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 position-relative overflow-hidden hover-shadow transition-all">
+                <div class="position-absolute top-0 end-0 mt-2 me-3">
+                    <i class="fas fa-calendar-day fa-3x text-primary opacity-15"></i>
+                </div>
+                <div class="card-body p-4">
+                    <h6 class="text-primary fw-bold text-uppercase mb-2 small">Bugünkü Satışlar</h6>
+                    <h3 class="display-6 fw-bold mb-0">{{ today_sales|default:"0.00" }} ₺</h3>
+                    <div class="mt-2 d-flex align-items-center">
+                        <span class="badge bg-primary bg-opacity-10 text-primary me-2">Günlük</span>
+                        <small class="text-muted">{{ today_order_count }} Sipariş</small>
+                    </div>
+                </div>
+                <div class="card-footer bg-light py-2 rounded-bottom-4 border-0">
+                    <a href="{% url 'pos:daily_report' %}" class="text-decoration-none d-flex justify-content-between align-items-center text-primary">
+                        <span class="small fw-medium">Detaylar</span>
+                        <i class="fas fa-arrow-right small"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aylık Satışlar -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 position-relative overflow-hidden hover-shadow transition-all">
+                <div class="position-absolute top-0 end-0 mt-2 me-3">
+                    <i class="fas fa-calendar-week fa-3x text-success opacity-15"></i>
+                </div>
+                <div class="card-body p-4">
+                    <h6 class="text-success fw-bold text-uppercase mb-2 small">Aylık Satışlar</h6>
+                    <h3 class="display-6 fw-bold mb-0">{{ monthly_sales|default:"0.00" }} ₺</h3>
+                    <div class="mt-2 d-flex align-items-center">
+                        <span class="badge bg-success bg-opacity-10 text-success me-2">Aylık</span>
+                        <small class="text-muted">{{ monthly_order_count }} Sipariş</small>
+                    </div>
+                </div>
+                <div class="card-footer bg-light py-2 rounded-bottom-4 border-0">
+                    <a href="{% url 'pos:monthly_report' %}" class="text-decoration-none d-flex justify-content-between align-items-center text-success">
+                        <span class="small fw-medium">Detaylar</span>
+                        <i class="fas fa-arrow-right small"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Yıllık Satışlar -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 position-relative overflow-hidden hover-shadow transition-all">
+                <div class="position-absolute top-0 end-0 mt-2 me-3">
+                    <i class="fas fa-calendar fa-3x text-warning opacity-15"></i>
+                </div>
+                <div class="card-body p-4">
+                    <h6 class="text-warning fw-bold text-uppercase mb-2 small">Yıllık Satışlar</h6>
+                    <h3 class="display-6 fw-bold mb-0">{{ yearly_sales|default:"0.00" }} ₺</h3>
+                    <div class="mt-2 d-flex align-items-center">
+                        <span class="badge bg-warning bg-opacity-10 text-warning me-2">Yıllık</span>
+                        <small class="text-muted">{{ yearly_order_count }} Sipariş</small>
+                    </div>
+                </div>
+                <div class="card-footer bg-light py-2 rounded-bottom-4 border-0">
+                    <a href="{% url 'pos:yearly_report' %}" class="text-decoration-none d-flex justify-content-between align-items-center text-warning">
+                        <span class="small fw-medium">Detaylar</span>
+                        <i class="fas fa-arrow-right small"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toplam Satışlar -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 position-relative overflow-hidden hover-shadow transition-all">
+                <div class="position-absolute top-0 end-0 mt-2 me-3">
+                    <i class="fas fa-chart-line fa-3x text-info opacity-15"></i>
+                </div>
+                <div class="card-body p-4">
+                    <h6 class="text-info fw-bold text-uppercase mb-2 small">Toplam Satışlar</h6>
+                    <h3 class="display-6 fw-bold mb-0">{{ total_sales|default:"0.00" }} ₺</h3>
+                    <div class="mt-2 d-flex align-items-center">
+                        <span class="badge bg-info bg-opacity-10 text-info me-2">Toplam</span>
+                        <small class="text-muted">{{ total_order_count }} Sipariş</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ödeme İstatistikleri -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-light border-0 py-3 rounded-top-4">
+            <div class="d-flex align-items-center">
+                <div class="icon-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center me-3">
+                    <i class="fas fa-money-bill text-success"></i>
+                </div>
+                <h5 class="card-title mb-0 fw-bold">Bugünkü Ödeme İstatistikleri</h5>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4 py-3">Ödeme Tipi</th>
+                            <th class="text-center py-3">İşlem Sayısı</th>
+                            <th class="text-end pe-4 py-3">Toplam Tutar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in today_payment_stats %}
+                        <tr class="align-middle">
+                            <td class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    {% if "Nakit" in stat.payment_type_display %}
+                                    <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                                        <i class="fas fa-money-bill me-1"></i> Nakit
+                                    </span>
+                                    {% elif "Kredi" in stat.payment_type_display %}
+                                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                                        <i class="fas fa-credit-card me-1"></i> Kredi Kartı
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill">
+                                        <i class="fas fa-wallet me-1"></i> {{ stat.payment_type_display }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">
+                                    {{ stat.count }}
+                                </span>
+                            </td>
+                            <td class="text-end pe-4 fw-bold">{{ stat.total }} ₺</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center py-5">
+                                <div class="py-4">
+                                    <div class="mb-3">
+                                        <i class="fas fa-receipt fa-3x text-muted opacity-50"></i>
+                                    </div>
+                                    <p class="text-muted mb-0">Henüz ödeme yapılmadı.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ödeme İstatistikleri ve Ürün Satışları -->
+    <div class="row g-4">
+        <!-- Personel Satışları -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-light border-0 py-3 rounded-top-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3">
+                                <i class="fas fa-users text-primary"></i>
+                            </div>
+                            <h5 class="card-title mb-0 fw-bold">Bugünkü Personel Satışları</h5>
+                        </div>
+                        <a href="{% url 'pos:staff_sales_report' %}" class="btn btn-primary btn-sm rounded-pill shadow-sm">
+                            <i class="fas fa-chart-bar me-1"></i>Detaylı Rapor
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4 py-3">Personel</th>
+                                    <th class="text-center py-3">Sipariş Sayısı</th>
+                                    <th class="text-end pe-4 py-3">Toplam Satış</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for staff in staff_sales %}
+                                <tr class="align-middle">
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-primary bg-opacity-10 text-primary me-3">
+                                                {{ staff.staff__first_name|default:staff.staff__username|make_list|first|upper }}
+                                            </div>
+                                            <span class="fw-medium">{{ staff.staff__first_name|default:staff.staff__username }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                                            {{ staff.order_count }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-4 fw-bold">{{ staff.total_sales }} ₺</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-5">
+                                        <div class="py-4">
+                                            <div class="mb-3">
+                                                <i class="fas fa-user-tie fa-3x text-muted opacity-50"></i>
+                                            </div>
+                                            <p class="text-muted mb-0">Henüz satış yapılmadı.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ürün Satışları -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-light border-0 py-3 rounded-top-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center me-3">
+                                <i class="fas fa-box text-warning"></i>
+                            </div>
+                            <h5 class="card-title mb-0 fw-bold">Bugünkü Ürün Satışları</h5>
+                        </div>
+                        <a href="{% url 'pos:product_report' %}" class="btn btn-warning btn-sm rounded-pill shadow-sm">
+                            <i class="fas fa-chart-bar me-1"></i>Detaylı Rapor
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4 py-3">Ürün</th>
+                                    <th class="py-3">Kategori</th>
+                                    <th class="text-center py-3">Satış Adedi</th>
+                                    <th class="text-end pe-4 py-3">Toplam Tutar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stat in today_product_stats %}
+                                <tr class="align-middle">
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-warning bg-opacity-10 text-warning me-3">
+                                                <i class="fas fa-box"></i>
+                                            </div>
+                                            <span class="fw-medium">{{ stat.product__name }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill">
+                                            {{ stat.product__category__name }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                                            {{ stat.total_quantity }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-4 fw-bold">{{ stat.total_amount }} ₺</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5">
+                                        <div class="py-4">
+                                            <div class="mb-3">
+                                                <i class="fas fa-shopping-bag fa-3x text-muted opacity-50"></i>
+                                            </div>
+                                            <p class="text-muted mb-0">Henüz satış yapılmadı.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Genel tablo stilleri */
+.table-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.table-responsive {
+    margin-bottom: 0;
+}
+
+/* Icon circle styles */
+.icon-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Modern tablo stilleri */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Display size */
+.display-6 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+/* Opacity for background icons */
+.opacity-15 {
+    opacity: 0.15;
+}
+
+/* Boş tablo durumu stili */
+.empty-state {
+    padding: 20px;
+    text-align: center;
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Kartlar için hover efektleri */
+.hover-shadow:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+/* Border radius */
+.rounded-4 {
+    border-radius: 0.5rem;
+}
+
+.rounded-top-4 {
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+.rounded-bottom-4 {
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+/* Scrollbar stilleri */
+.table-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.3);
+}
+
+/* Mobil optimizasyonları */
+@media (max-width: 992px) {
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .card-header .btn {
+        margin-top: 10px;
+        align-self: flex-start;
+    }
+}
+
+@media (max-width: 576px) {
+    .table-container {
+        max-height: 250px;
+    }
+    
+    .display-6 {
+        font-size: 2rem;
+    }
+    
+    .stats-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .empty-state-icon {
+        width: 60px;
+        height: 60px;
+    }
+}
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Onay metni kontrolü
+    const confirmText = document.getElementById('confirmText');
+    const confirmButton = document.getElementById('confirmCleanup');
+    
+    if (confirmText && confirmButton) {
+        confirmText.addEventListener('input', function() {
+            confirmButton.disabled = this.value.toLowerCase() !== 'onaylıyorum';
+        });
+
+        // Cleanup form submit işlemi
+        const cleanupForm = document.getElementById('cleanupForm');
+        if (cleanupForm) {
+            cleanupForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                showToast('info', 'Veritabanı temizleme işlemi başlatılıyor...');
+                
+                fetch(this.action, {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('success', data.message || 'Veritabanı başarıyla temizlendi');
+                        // Modal'ı kapat
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('cleanupModal'));
+                        modal.hide();
+                        // 1 saniye sonra sayfayı yenile
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        showToast('danger', data.message || 'Veritabanı temizleme işlemi başarısız');
+                    }
+                })
+                .catch(error => {
+                    showToast('danger', 'Bir hata oluştu. Lütfen tekrar deneyin.');
+                    console.error('Error:', error);
+                });
+            });
+        }
+    }
+    
+    // Tarih alanları için varsayılan değerleri ayarla
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    // Tarihleri YYYY-MM-DD formatına çevir
+    const formatDate = (date) => {
+        return date.toISOString().split('T')[0];
+    };
+    
+    // Tüm tarih inputlarına varsayılan değerleri ata
+    document.querySelectorAll('input[type="date"]').forEach(input => {
+        if (input.name === 'start_date') {
+            input.value = formatDate(firstDayOfMonth);
+        } else if (input.name === 'end_date') {
+            input.value = formatDate(today);
+        }
+    });
+
+    // Cleanup success mesajını kontrol et ve toast göster
+    {% if cleanup_success %}
+        showToast('success', '{{ cleanup_message }}');
+    {% endif %}
+});
+</script>
+{% endblock %} 

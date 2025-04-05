@@ -1,0 +1,341 @@
+{% extends 'pos/base.html' %}
+
+{% block title %}Kategoriler - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold h4 mb-0">
+            <i class="fw-bold h4 mb-0"></i>Kategoriler
+        </h5>
+        <div class="d-flex gap-2">
+
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                <i class="fas fa-plus me-2"></i>Yeni Kategori
+            </button>
+            <a href="{% url 'pos:product_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>Ürünlere Dön
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0 fw-bold">
+                    <i class="fas fa-list me-2 text-primary"></i>Kategori Listesi
+                </h6>
+                <span class="badge bg-primary rounded-pill">{{ categories|length }} Kategori</span>
+            </div>
+        </div>
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="table align-middle table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Kategori Adı</th>
+                            <th>Açıklama</th>
+                            <th>Ürün Sayısı</th>
+                            <th class="text-end">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td>
+                                <span class="fw-medium">{{ category.name }}</span>
+                            </td>
+                            <td>{{ category.description|default:"-" }}</td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-secondary rounded-pill">
+                                    {{ category.product_set.count }} Ürün
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary edit-category" 
+                                            data-category-id="{{ category.id }}"
+                                            data-category-name="{{ category.name }}"
+                                            data-category-description="{{ category.description }}"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editCategoryModal"
+                                            title="Düzenle">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-category"
+                                            data-category-id="{{ category.id }}"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteCategoryModal"
+                                            title="Sil">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-folder-open fa-3x text-muted opacity-50"></i>
+                                    </div>
+                                    <h6 class="mt-3">Henüz kategori bulunmuyor</h6>
+                                    <p class="text-muted mb-3">Yeni bir kategori oluşturmak için "Yeni Kategori" butonuna tıklayın.</p>
+                                    <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                                        <i class="fas fa-plus me-1"></i>Yeni Kategori
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Yeni Kategori Modal -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'pos:category_create' %}">
+                {% csrf_token %}
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fas fa-plus-circle me-2 text-primary"></i>Yeni Kategori
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label small fw-medium">Kategori Adı</label>
+                        <input type="text" class="form-control" id="categoryName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryDescription" class="form-label small fw-medium">Açıklama</label>
+                        <textarea class="form-control" id="categoryDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Kategori Düzenle Modal -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="" id="editCategoryForm">
+                {% csrf_token %}
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fas fa-edit me-2 text-primary"></i>Kategori Düzenle
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editCategoryName" class="form-label small fw-medium">Kategori Adı</label>
+                        <input type="text" class="form-control" id="editCategoryName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCategoryDescription" class="form-label small fw-medium">Açıklama</label>
+                        <textarea class="form-control" id="editCategoryDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Kategori Sil Modal -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="" id="deleteCategoryForm">
+                {% csrf_token %}
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fas fa-trash me-2 text-danger"></i>Kategori Sil
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Uyarı:</strong> Bu kategoriyi silmek istediğinizden emin misiniz?
+                    </div>
+                    <p class="text-danger mb-0">
+                        <small><i class="fas fa-info-circle me-1"></i>Not: Bu işlem geri alınamaz ve kategoriye ait tüm ürünler de silinecektir.</small>
+                    </p>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Sil
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.table-container {
+    max-height: 70vh;
+    overflow-y: auto;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.table-responsive {
+    margin-bottom: 0;
+}
+
+/* Tablo başlığını sabitleme */
+.table thead th {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 1;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 0.75rem 1rem;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0,0,0,0.015);
+}
+
+.table tbody td {
+    padding: 0.75rem 1rem;
+    border: none;
+}
+
+.empty-state {
+    padding: 2rem 1rem;
+}
+
+.empty-state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    width: 80px;
+    background-color: rgba(0,0,0,0.03);
+    border-radius: 50%;
+}
+
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* Scrollbar stilleri */
+.table-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.02);
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.15);
+    border-radius: 6px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.25);
+}
+
+/* Mobil optimizasyonları */
+@media (max-width: 768px) {
+    .table-container {
+        max-height: calc(100vh - 200px);
+    }
+    
+    .table th, .table td {
+        padding: 0.6rem 0.75rem;
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+        padding: 0.35rem 0.65rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+    
+    .d-flex.justify-content-between.align-items-center button.btn {
+        width: 100%;
+    }
+    
+    .badge.rounded-pill {
+        display: inline-flex;
+    }
+    
+    .table-responsive {
+        border-radius: 0.5rem;
+    }
+    
+    .btn-group {
+        display: flex;
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Kategori düzenleme modalını hazırla
+    const editButtons = document.querySelectorAll('.edit-category');
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const categoryId = this.dataset.categoryId;
+            const categoryName = this.dataset.categoryName;
+            const categoryDescription = this.dataset.categoryDescription;
+            
+            document.getElementById('editCategoryName').value = categoryName;
+            document.getElementById('editCategoryDescription').value = categoryDescription;
+            document.getElementById('editCategoryForm').action = `/kategori/${categoryId}/duzenle/`;
+        });
+    });
+    
+    // Kategori silme modalını hazırla
+    const deleteButtons = document.querySelectorAll('.delete-category');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const categoryId = this.dataset.categoryId;
+            document.getElementById('deleteCategoryForm').action = `/kategori/${categoryId}/sil/`;
+        });
+    });
+});
+</script>
+{% endblock %} 

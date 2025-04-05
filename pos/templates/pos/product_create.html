@@ -1,0 +1,413 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-3 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold h4 mb-0">
+            <i class="fw-bold h4 mb-0"></i>Yeni Ürün Ekle
+        </h4>
+        <a href="{% url 'pos:product_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i>Ürün Listesi
+        </a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-xl-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="fas fa-box me-2 text-primary"></i>Ürün Bilgileri
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data" id="productForm" novalidate>
+                        {% csrf_token %}
+                        
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.name.id_for_label }}" class="form-label small fw-medium">Ürün Adı</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    {{ form.name.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.category.id_for_label }}" class="form-label small fw-medium">Kategori</label>
+                                {{ form.category }}
+                                {% if form.category.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    {{ form.category.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="{{ form.price.id_for_label }}" class="form-label small fw-medium">Fiyat</label>
+                                <div class="input-group">
+                                    {{ form.price }}
+                                    <span class="input-group-text">₺</span>
+                                </div>
+                                {% if form.price.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    {{ form.price.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.image.id_for_label }}" class="form-label small fw-medium">Ürün Görseli</label>
+                                {{ form.image }}
+                                {% if form.image.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    {{ form.image.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="{{ form.description.id_for_label }}" class="form-label small fw-medium">Açıklama</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {{ form.description.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.is_available }}
+                                <label class="form-check-label small fw-medium" for="{{ form.is_available.id_for_label }}">
+                                    Ürün Aktif
+                                </label>
+                            </div>
+                            {% if form.is_available.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {{ form.is_available.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4" id="submitButton">
+                                <i class="fas fa-save me-2"></i>Kaydet
+                            </button>
+                            <a href="{% url 'pos:product_list' %}" class="btn btn-light px-4">
+                                <i class="fas fa-times me-2"></i>İptal
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h6 class="card-title mb-0 fw-bold">
+                        <i class="fas fa-info-circle me-2 text-primary"></i>Bilgi
+                    </h6>
+                </div>
+                <div class="card-body">
+
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item border-0 px-0 d-flex align-items-center py-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span class="small">Ürün adı zorunludur</span>
+                        </li>
+                        <li class="list-group-item border-0 px-0 d-flex align-items-center py-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span class="small">Kategori seçimi zorunludur</span>
+                        </li>
+                        <li class="list-group-item border-0 px-0 d-flex align-items-center py-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span class="small">Fiyat alanı zorunludur ve sayısal bir değer olmalıdır</span>
+                        </li>
+                        <li class="list-group-item border-0 px-0 d-flex align-items-center py-2">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            <span class="small">Ürün görseli isteğe bağlıdır</span>
+                        </li>
+                        <li class="list-group-item border-0 px-0 d-flex align-items-center py-2">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            <span class="small">Açıklama alanı isteğe bağlıdır</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control,
+.form-select {
+    padding: 0.75rem 1rem;
+    border-color: rgba(0,0,0,0.1);
+    font-size: 0.875rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13,110,253,.15);
+}
+
+.input-group-text {
+    border-color: rgba(0,0,0,0.1);
+    background-color: #f8f9fa;
+    font-size: 0.875rem;
+}
+
+.form-label {
+    margin-bottom: 0.5rem;
+    color: #444;
+}
+
+.form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+    margin-top: 0;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.form-switch .form-check-input {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280, 0, 0, 0.25%29'/%3e%3c/svg%3e");
+}
+
+.form-switch .form-check-input:checked {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+}
+
+.card {
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,.08) !important;
+}
+
+.invalid-feedback {
+    font-size: 0.75rem;
+    color: #dc3545;
+    margin-top: 0.25rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+}
+
+.btn-light {
+    background-color: #f8f9fa;
+    border-color: #f8f9fa;
+}
+
+.btn-light:hover {
+    background-color: #e9ecef;
+    border-color: #e9ecef;
+}
+
+
+.list-group-item {
+    background-color: transparent;
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 1rem;
+    }
+    
+    .card-body {
+        padding: 1.25rem;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form alanlarına Bootstrap sınıflarını ekle
+    const formInputs = document.querySelectorAll('input[type="text"], input[type="number"], select, textarea');
+    formInputs.forEach(input => {
+        input.classList.add('form-control');
+    });
+
+    // Select elementlerine Bootstrap sınıfını ekle
+    const selectInputs = document.querySelectorAll('select');
+    selectInputs.forEach(select => {
+        select.classList.add('form-select');
+    });
+
+    // Dosya input alanına Bootstrap sınıfını ekle
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+        fileInput.classList.add('form-control');
+        
+        // Dosya seçimi değiştiğinde bildirim göster
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const fileName = this.files[0].name;
+                showToast('info', `Seçilen görsel: ${fileName}`);
+            }
+        });
+    }
+
+    // Switch input alanına Bootstrap sınıfını ekle
+    const switchInput = document.querySelector('input[type="checkbox"]');
+    if (switchInput) {
+        switchInput.classList.add('form-check-input');
+        
+        // Durum değiştiğinde bildirim göster
+        switchInput.addEventListener('change', function() {
+            const status = this.checked ? 'aktif' : 'pasif';
+            showToast('info', `Ürün durumu ${status} olarak ayarlandı`);
+        });
+    }
+
+    // Form gönderimi için değişkenler
+    const productForm = document.getElementById('productForm');
+    const submitButton = document.getElementById('submitButton');
+    let formSubmitted = false;
+
+    // Submit butonuna tıklandığında form gönderimi
+    productForm.addEventListener('submit', handleFormSubmit);
+
+    function handleFormSubmit(event) {
+        event.preventDefault();
+        
+        // Form zaten gönderilmişse işlemi durdur
+        if (formSubmitted) {
+            console.log('Form zaten gönderildi, tekrar gönderilemez');
+            return false;
+        }
+        
+        // Form validasyonu
+        if (!validateForm()) {
+            return false;
+        }
+        
+        // Form gönderim durumunu işaretle
+        formSubmitted = true;
+        
+        // Submit butonunu devre dışı bırak
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Kaydediliyor...';
+        
+        // Form bildirimini göster
+        showToast('info', 'Ürün kaydediliyor...');
+        
+        // 1. Seçenek: Normal form gönderimi
+        setTimeout(function() {
+            productForm.removeEventListener('submit', handleFormSubmit);
+            productForm.submit();
+        }, 500);
+        
+        /* 
+        // 2. Seçenek: AJAX göndermek istiyorsanız bu kodu aktifleştirin ve yukarıdaki normal form gönderimini kapatın
+        const formData = new FormData(productForm);
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Sunucu yanıt vermedi: ' + response.status);
+            }
+            
+            try {
+                return response.json();
+            } catch (e) {
+                // JSON döndürülmezse normal form gönderimi yap
+                productForm.removeEventListener('submit', handleFormSubmit);
+                productForm.submit();
+                throw new Error('JSON döndürülmedi');
+            }
+        })
+        .then(data => {
+            if (data && data.success) {
+                showToast('success', 'Ürün başarıyla kaydedildi');
+                setTimeout(() => {
+                    window.location.href = '{% url "pos:product_list" %}';
+                }, 1000);
+            } else {
+                formSubmitted = false;
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-save me-2"></i>Kaydet';
+                showToast('danger', data.error || 'Ürün kaydedilirken bir hata oluştu');
+            }
+        })
+        .catch(error => {
+            console.error('Form gönderim hatası:', error);
+            // Hata durumunda normal form gönderimine geç
+            productForm.removeEventListener('submit', handleFormSubmit);
+            productForm.submit();
+        });
+        */
+        
+        return false;
+    }
+    
+    function validateForm() {
+        // Form alanlarını kontrol et
+        const nameInput = document.querySelector('#{{ form.name.id_for_label }}');
+        const categoryInput = document.querySelector('#{{ form.category.id_for_label }}');
+        const priceInput = document.querySelector('#{{ form.price.id_for_label }}');
+        
+        let isValid = true;
+        
+        if (!nameInput.value.trim()) {
+            showToast('danger', 'Ürün adı zorunludur');
+            nameInput.focus();
+            isValid = false;
+        }
+        
+        if (!categoryInput.value) {
+            showToast('danger', 'Kategori seçimi zorunludur');
+            categoryInput.focus();
+            isValid = false;
+        }
+        
+        if (!priceInput.value || isNaN(priceInput.value) || parseFloat(priceInput.value) <= 0) {
+            showToast('danger', 'Geçerli bir fiyat giriniz');
+            priceInput.focus();
+            isValid = false;
+        }
+        
+        return isValid;
+    }
+});
+</script>
+{% endblock %} 

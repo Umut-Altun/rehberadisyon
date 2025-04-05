@@ -1,0 +1,978 @@
+{% extends 'pos/base.html' %}
+{% load static %}
+
+{% block title %}Müşteriler - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-3">
+    <!-- Toast Mesaj Sistemi -->
+    <div class="toast-container position-fixed top-0 end-0 p-4" style="z-index: 1050;">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast align-items-center border-0 show mb-3" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                    <div class="d-flex">
+                        <div class="toast-body {% if message.tags %}bg-{{ message.tags }}{% endif %} text-white">
+                            {% if message.tags == 'success' %}
+                                <i class="fas fa-check-circle"></i>
+                            {% elif message.tags == 'error' or message.tags == 'danger' %}
+                                <i class="fas fa-exclamation-circle"></i>
+                            {% elif message.tags == 'warning' %}
+                                <i class="fas fa-exclamation-triangle"></i>
+                            {% elif message.tags == 'info' %}
+                                <i class="fas fa-info-circle"></i>
+                            {% endif %}
+                            {{ message }}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Başlık ve Yeni Müşteri Butonu -->
+    <div class="row mb-3">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">
+                    <span class="fw-bold h4 mb-0">Müşteriler</span>
+                </h2>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                    <i class="fas fa-plus-circle me-2"></i> Yeni Müşteri
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Müşteri Listesi Kartı -->
+    <div class="row">
+        <div class="col">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-list me-2 text-primary"></i>
+                            <h5 class="card-title mb-0 fw-bold">Müşteri Listesi</h5>
+                            <span class="badge bg-primary rounded-pill ms-2">{{ customers.paginator.count }} Müşteri</span>
+                        </div>
+                        <div class="search-container">
+                            <div class="input-group">
+                                <span class="input-group-text border-0 bg-light">
+                                    <i class="fas fa-search text-primary"></i>
+                                </span>
+                                <input type="text" class="form-control border-0 bg-light shadow-none" id="customer-search" 
+                                       placeholder="Müşteri ara...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Ad Soyad</th>
+                                    <th>Telefon</th>
+                                    <th>Adres</th>
+                                    <th>Son Sipariş</th>
+                                    <th>Toplam Sipariş</th>
+                                    <th class="text-end">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for customer in customers %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="customer-avatar me-3">
+                                                {{ customer.name|make_list|first|upper }}
+                                            </div>
+                                            <div>
+                                                <span class="fw-medium d-block">{{ customer.name }}</span>
+                                                {% if customer.email %}
+                                                <small class="text-muted">{{ customer.email }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if customer.phone %}
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-success-subtle text-success me-2">
+                                                <i class="fas fa-phone"></i>
+                                            </div>
+                                            <span>{{ customer.phone }}</span>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if customer.address %}
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-info-subtle text-info me-2">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                            </div>
+                                            <span class="text-truncate address-text">{{ customer.address }}</span>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if customer.last_order %}
+                                        <a href="{% url 'pos:order_detail' customer.last_order.id %}" class="last-order-link">
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-circle bg-warning-subtle text-warning me-2">
+                                                    <i class="fas fa-clock"></i>
+                                                </div>
+                                                <span>{{ customer.last_order.created_at|date:"d.m.Y H:i" }}</span>
+                                            </div>
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if customer.total_orders > 0 %}
+                                        <span class="badge order-badge">
+                                            <i class="fas fa-shopping-bag me-1"></i>
+                                            {{ customer.total_orders }} Sipariş
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary">
+                                            <i class="fas fa-shopping-bag me-1"></i>
+                                            Sipariş Yok
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="action-buttons">
+                                            <a href="{% url 'pos:order_create' %}?customer={{ customer.id }}&type=takeaway" 
+                                               class="btn btn-sm btn-primary" title="Yeni Sipariş">
+                                                <i class="fas fa-plus"></i>
+                                            </a>
+                                            <a href="{% url 'pos:customer_detail' customer.id %}" 
+                                               class="btn btn-sm btn-info" title="Müşteri Detayı">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-warning edit-customer" 
+                                                    data-bs-toggle="modal" data-bs-target="#editCustomerModal"
+                                                    data-customer-id="{{ customer.id }}"
+                                                    data-customer-name="{{ customer.name }}"
+                                                    data-customer-phone="{{ customer.phone }}"
+                                                    data-customer-address="{{ customer.address|default:'' }}"
+                                                    title="Düzenle">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger" 
+                                                    data-bs-toggle="modal" data-bs-target="#deleteCustomerModal"
+                                                    data-customer-id="{{ customer.id }}"
+                                                    data-customer-name="{{ customer.name }}"
+                                                    title="Sil">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="empty-state">
+                                            <div class="empty-state-icon">
+                                                <i class="fas fa-users fa-3x text-muted opacity-50"></i>
+                                            </div>
+                                            <h6 class="mt-4">Henüz müşteri bulunmuyor</h6>
+                                            <p class="text-muted mb-4">Yeni bir müşteri eklemek için "Yeni Müşteri" butonuna tıklayın.</p>
+                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                                                <i class="fas fa-plus-circle me-2"></i> Yeni Müşteri
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Sayfalama -->
+                {% if customers.paginator.num_pages > 1 %}
+                <div class="card-footer bg-white py-3">
+                    <nav aria-label="Sayfalama">
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            {% if customers.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1" aria-label="İlk">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ customers.previous_page_number }}" aria-label="Önceki">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% for num in customers.paginator.page_range %}
+                                {% if customers.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                                {% elif num > customers.number|add:'-3' and num < customers.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if customers.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ customers.next_page_number }}" aria-label="Sonraki">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ customers.paginator.num_pages }}" aria-label="Son">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Müşteri Avatar Stili */
+.customer-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    background-color: var(--bs-primary);
+    color: white;
+    font-size: 18px;
+    transition: all 0.2s ease;
+}
+
+/* İkon çemberleri */
+.icon-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+/* Tablo stilleri */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.table thead th {
+    font-weight: 600;
+    color: #444;
+    background-color: white;
+    padding: 15px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.table tbody td {
+    padding: 15px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    vertical-align: middle;
+}
+
+/* Sipariş rozeti */
+.order-badge {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+    padding: 6px 10px;
+    border-radius: 50px;
+    font-weight: 500;
+}
+
+/* Adres metni */
+.address-text {
+    max-width: 200px;
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Son sipariş linki */
+.last-order-link {
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+}
+
+.last-order-link:hover {
+    color: var(--bs-primary);
+}
+
+/* Arama kutusu */
+.search-container {
+    min-width: 300px;
+}
+
+.search-container .input-group {
+    border-radius: 50px;
+    overflow: hidden;
+}
+
+.search-container .input-group-text {
+    border-radius: 50px 0 0 50px;
+}
+
+.search-container .form-control {
+    border-radius: 0 50px 50px 0;
+}
+
+/* Akstiyon butonları */
+.action-buttons .btn {
+    margin-left: 5px;
+    border-radius: 6px;
+    padding: 5px 10px;
+    transition: all 0.2s ease;
+}
+
+.action-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Boş durum */
+.empty-state {
+    padding: 40px 20px;
+}
+
+.empty-state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+    width: 80px;
+    background-color: rgba(0,0,0,0.03);
+    border-radius: 50%;
+}
+
+/* Hover efekti */
+.table-hover tbody tr {
+    transition: all 0.15s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.02);
+}
+
+/* Sayfalama stilleri */
+.pagination {
+    margin-bottom: 0;
+}
+
+.page-link {
+    padding: 0.5rem 0.75rem;
+    color: var(--bs-primary);
+    border: none;
+    margin: 0 0.25rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.page-link:hover {
+    background-color: var(--bs-primary-bg-subtle);
+    color: var(--bs-primary);
+}
+
+.page-item.active .page-link {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+/* Responsive düzenlemeler */
+@media (max-width: 992px) {
+    .address-text {
+        max-width: 150px;
+    }
+    
+    .table thead th, 
+    .table tbody td {
+        padding: 12px 10px;
+    }
+    
+    .customer-avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+    }
+    
+    .icon-circle {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+    
+    .page-link {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .address-text {
+        max-width: 100px;
+    }
+    
+    .search-container {
+        min-width: 220px;
+    }
+    
+    .action-buttons .btn {
+        padding: 4px 8px;
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .page-link {
+        margin: 0.125rem;
+    }
+}
+</style>
+
+<!-- Yeni Müşteri Modal -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2 text-primary"></i>Yeni Müşteri</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addCustomerForm" method="post" action="{% url 'pos:customer_create' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="customer_name" class="form-label fw-medium">Ad Soyad</label>
+                        <input type="text" class="form-control" id="customer_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customer_phone" class="form-label fw-medium">Telefon</label>
+                        <input type="tel" class="form-control" id="customer_phone" name="phone" required>
+                        <div class="invalid-feedback">
+                            Bu telefon numarası zaten kullanılmaktadır.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customer_address" class="form-label fw-medium">Adres</label>
+                        <textarea class="form-control" id="customer_address" name="address" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary px-4" id="saveCustomerBtn">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form gönderim durum takibi için değişkenler
+    let isAddingCustomer = false;
+    let isEditingCustomer = false;
+    let isDeletingCustomer = false;
+    
+    // Müşteri arama
+    const searchInput = document.getElementById('customer-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            let query = this.value.toLowerCase();
+            let rows = document.querySelectorAll('tbody tr');
+            let visibleCount = 0;
+            
+            rows.forEach(function(row) {
+                let text = row.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            // Arama sonucu bildirimi
+            if (query.length > 0) {
+                showToast('info', `Arama sonucu: ${visibleCount} müşteri bulundu`);
+            }
+        });
+    }
+
+    // Müşteri düzenleme modalı
+    document.querySelectorAll('.edit-customer').forEach(function(button) {
+        button.addEventListener('click', function() {
+            let customerId = this.dataset.customerId;
+            let customerName = this.dataset.customerName;
+            let customerPhone = this.dataset.customerPhone;
+            let customerAddress = this.dataset.customerAddress;
+
+            document.getElementById('edit_customer_name').value = customerName;
+            document.getElementById('edit_customer_phone').value = customerPhone;
+            document.getElementById('edit_customer_address').value = customerAddress;
+            document.getElementById('edit-customer-form').action = `/musteri/${customerId}/duzenle/`;
+            
+            showToast('info', `${customerName} müşterisi düzenleniyor...`);
+        });
+    });
+
+    // Müşteri silme modalı
+    const deleteModal = document.getElementById('deleteCustomerModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            let button = event.relatedTarget;
+            let customerId = button.dataset.customerId;
+            let customerName = button.dataset.customerName;
+            
+            this.querySelector('.customer-name').textContent = customerName;
+            this.querySelector('#delete-customer-form').action = `/musteri/${customerId}/sil/`;
+            
+            showToast('warning', `${customerName} müşterisi silme işlemi başlatıldı`);
+        });
+    }
+
+    // Müşteri ekleme formu
+    const addCustomerForm = document.getElementById('addCustomerForm');
+    if (addCustomerForm) {
+        addCustomerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Form zaten gönderiliyorsa tekrar göndermeyi engelle
+            if (isAddingCustomer) {
+                console.log('Müşteri zaten ekleniyor, tekrar gönderilemez.');
+                return false;
+            }
+            
+            // Validasyon
+            const nameInput = document.getElementById('customer_name');
+            const phoneInput = document.getElementById('customer_phone');
+            
+            if (!nameInput.value.trim()) {
+                showToast('danger', 'Lütfen müşteri adını giriniz');
+                nameInput.focus();
+                return false;
+            }
+            
+            if (!phoneInput.value.trim()) {
+                showToast('danger', 'Lütfen telefon numarasını giriniz');
+                phoneInput.focus();
+                return false;
+            }
+            
+            // Form gönderim durumunu güncelle
+            isAddingCustomer = true;
+            
+            // Submit butonunu devre dışı bırak
+            const submitButton = document.getElementById('saveCustomerBtn');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Kaydediliyor...';
+            
+            // Bildirim göster
+            showToast('info', 'Müşteri ekleniyor...');
+            
+            // Form verilerini al
+            const formData = new FormData(addCustomerForm);
+            
+            // Form verileri ile POST isteği gönder
+            fetch(addCustomerForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                // Yanıt içerik türünü kontrol et
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    // JSON yanıtı
+                    return response.json();
+                } else {
+                    // HTML yanıtı - durumu başarılı olarak işaretle
+                    return { status: 'success', redirect_url: window.location.href };
+                }
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Başarı mesajı göster
+                    showToast('success', 'Müşteri başarıyla eklendi.');
+                    
+                    // Sayfayı yenile veya yönlendir
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || window.location.href;
+                    }, 1000);
+                } else {
+                    // Hata mesajı göster
+                    showToast('danger', data.message || 'Bu telefon numarası zaten kullanılmaktadır.');
+                    
+                    // Telefon alanındaki hatayı göster
+                    const phoneInput = document.getElementById('customer_phone');
+                    phoneInput.classList.add('is-invalid');
+                    
+                    // Form gönderme durumunu sıfırla ve butonu aktif et
+                    isAddingCustomer = false;
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Kaydet';
+                }
+            })
+            .catch(error => {
+                console.error('Hata:', error);
+                
+                // Genel hata mesajı göster
+                showToast('danger', 'Bir hata oluştu. Lütfen tekrar deneyin.');
+                
+                // Form gönderme durumunu sıfırla ve butonu aktif et
+                isAddingCustomer = false;
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Kaydet';
+            });
+            
+            return false;
+        });
+    }
+    
+    // Müşteri düzenleme formu
+    const editCustomerForm = document.getElementById('edit-customer-form');
+    if (editCustomerForm) {
+        editCustomerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Form zaten gönderiliyorsa tekrar göndermeyi engelle
+            if (isEditingCustomer) {
+                console.log('Müşteri zaten güncelleniyor, tekrar gönderilemez.');
+                return false;
+            }
+            
+            // Validasyon
+            const nameInput = document.getElementById('edit_customer_name');
+            const phoneInput = document.getElementById('edit_customer_phone');
+            
+            if (!nameInput.value.trim()) {
+                showToast('danger', 'Lütfen müşteri adını giriniz');
+                nameInput.focus();
+                return false;
+            }
+            
+            if (!phoneInput.value.trim()) {
+                showToast('danger', 'Lütfen telefon numarasını giriniz');
+                phoneInput.focus();
+                return false;
+            }
+            
+            // Form gönderim durumunu güncelle
+            isEditingCustomer = true;
+            
+            // Submit butonunu devre dışı bırak
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Güncelleniyor...';
+            
+            // Bildirim göster
+            showToast('info', 'Müşteri güncelleniyor...');
+            
+            // Form verilerini al
+            const formData = new FormData(editCustomerForm);
+            
+            // Form verileri ile POST isteği gönder
+            fetch(editCustomerForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                // Yanıt içerik türünü kontrol et
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    // JSON yanıtı
+                    return response.json();
+                } else {
+                    // HTML yanıtı - durumu başarılı olarak işaretle
+                    return { status: 'success', redirect_url: window.location.href };
+                }
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Başarı mesajı göster
+                    showToast('success', 'Müşteri başarıyla güncellendi.');
+                    
+                    // Sayfayı yenile veya yönlendir
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || window.location.href;
+                    }, 1000);
+                } else {
+                    // Hata mesajı göster
+                    showToast('danger', data.message || 'Bu telefon numarası zaten kullanılmaktadır.');
+                    
+                    // Form gönderme durumunu sıfırla ve butonu aktif et
+                    isEditingCustomer = false;
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Güncelle';
+                }
+            })
+            .catch(error => {
+                console.error('Hata:', error);
+                
+                // Genel hata mesajı göster
+                showToast('danger', 'Bir hata oluştu. Lütfen tekrar deneyin.');
+                
+                // Form gönderme durumunu sıfırla ve butonu aktif et
+                isEditingCustomer = false;
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Güncelle';
+            });
+            
+            return false;
+        });
+    }
+    
+    // Müşteri silme formu
+    const deleteCustomerForm = document.getElementById('delete-customer-form');
+    if (deleteCustomerForm) {
+        deleteCustomerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Form zaten gönderiliyorsa tekrar göndermeyi engelle
+            if (isDeletingCustomer) {
+                return false;
+            }
+            
+            // Form gönderim durumunu güncelle
+            isDeletingCustomer = true;
+            
+            // Submit butonunu devre dışı bırak
+            const submitButton = this.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Siliniyor...';
+            
+            // Modal'ı kapat
+            const modal = bootstrap.Modal.getInstance(deleteModal);
+            modal.hide();
+            
+            // Bildirim göster
+            const customerName = document.querySelector('.customer-name').textContent;
+            showToast('warning', `${customerName} siliniyor...`);
+            
+            // Form verilerini al
+            const formData = new FormData(deleteCustomerForm);
+            
+            // Form verileri ile POST isteği gönder
+            fetch(deleteCustomerForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                // Yanıt içerik türünü kontrol et
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    // JSON yanıtı
+                    return response.json();
+                } else {
+                    // HTML yanıtı - durumu başarılı olarak işaretle
+                    return { status: 'success', redirect_url: window.location.href };
+                }
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Başarı mesajı göster
+                    showToast('success', `${customerName} başarıyla silindi.`);
+                    
+                    // Sayfayı yenile veya yönlendir
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url || window.location.href;
+                    }, 1000);
+                } else {
+                    // Hata mesajı göster
+                    showToast('danger', data.message || 'Müşteri silinirken bir hata oluştu.');
+                    
+                    // Form gönderme durumunu sıfırla
+                    isDeletingCustomer = false;
+                }
+            })
+            .catch(error => {
+                console.error('Hata:', error);
+                
+                // Genel hata mesajı göster
+                showToast('danger', 'Bir hata oluştu. Lütfen tekrar deneyin.');
+                
+                // Form gönderme durumunu sıfırla
+                isDeletingCustomer = false;
+            });
+            
+            return false;
+        });
+    }
+    
+    // Modal kapandığında formu sıfırla
+    const addCustomerModal = document.getElementById('addCustomerModal');
+    if (addCustomerModal) {
+        addCustomerModal.addEventListener('hidden.bs.modal', function() {
+            const form = this.querySelector('form');
+            form.reset();
+            const phoneInput = form.querySelector('#customer_phone');
+            phoneInput.classList.remove('is-invalid');
+            
+            // Form gönderim durumunu sıfırla
+            isAddingCustomer = false;
+            
+            // Submit butonunu sıfırla
+            const submitButton = document.getElementById('saveCustomerBtn');
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Kaydet';
+            }
+        });
+    }
+    
+    // Düzenleme modalı kapandığında gönderim durumunu sıfırla
+    const editCustomerModal = document.getElementById('editCustomerModal');
+    if (editCustomerModal) {
+        editCustomerModal.addEventListener('hidden.bs.modal', function() {
+            // Form gönderim durumunu sıfırla
+            isEditingCustomer = false;
+            
+            // Submit butonunu sıfırla
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = 'Güncelle';
+            }
+        });
+    }
+    
+    // Telefon numarası değiştiğinde hata mesajını gizle
+    const phoneInput = document.getElementById('customer_phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+    }
+    
+    // Sayfa yüklendiğinde URL parametrelerini kontrol et
+    const urlParams = new URLSearchParams(window.location.search);
+    const successParam = urlParams.get('success');
+    const errorParam = urlParams.get('error');
+    
+    // Başarı ve hata mesajlarını göster
+    if (successParam) {
+        showToast('success', decodeURIComponent(successParam));
+    }
+    
+    if (errorParam) {
+        showToast('danger', decodeURIComponent(errorParam));
+    }
+});
+</script>
+
+<!-- Müşteri Düzenleme Modal -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-edit me-2 text-warning"></i>Müşteri Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="edit-customer-form">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="edit_customer_name" class="form-label fw-medium">Ad Soyad</label>
+                        <input type="text" class="form-control" id="edit_customer_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_customer_phone" class="form-label fw-medium">Telefon</label>
+                        <input type="tel" class="form-control" id="edit_customer_phone" name="phone" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_customer_address" class="form-label fw-medium">Adres</label>
+                        <textarea class="form-control" id="edit_customer_address" name="address" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-warning px-4">Güncelle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Müşteri Silme Modal -->
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-trash me-2 text-danger"></i>Müşteri Sil</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <div class="avatar-danger mb-3">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <h5 class="mb-1">Silme İşlemini Onayla</h5>
+                    <p class="text-muted">
+                        <span class="customer-name fw-bold"></span> isimli müşteriyi silmek istediğinize emin misiniz?
+                        <br>Bu işlem geri alınamaz.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                <form method="post" id="delete-customer-form">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger px-4">Sil</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Silme modalı için avatar */
+.avatar-danger {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+</style>
+{% endblock %} 

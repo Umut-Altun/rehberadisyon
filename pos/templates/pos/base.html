@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="tr" class="loading">
+<head>
+    <!-- Tema kontrolü için erken yüklenen script -->
+    <script>
+        // Sayfa yüklenmeden önce tema kontrolü
+        (function() {
+            const savedTheme = localStorage.getItem('selected-theme') || 'light';
+            document.body.classList[savedTheme === 'dark' ? 'add' : 'remove']('dark-theme');
+            
+            // Sidebar durumunu kontrol et (varsayılan olarak kapalı)
+            const sidebarState = (function() {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith('sidebar_state=')) {
+                        return cookie.substring('sidebar_state='.length, cookie.length);
+                    }
+                }
+                return 'collapsed'; // Varsayılan olarak kapalı
+            })();
+            
+            if (sidebarState === 'collapsed' || sidebarState === '') {
+                document.body.classList.add('sidebar-collapsed');
+                // Sayfanın yüklenmesini beklemeden tüm ilgili CSS durumlarını uygula
+                document.write('<style>' + 
+                    '.sidebar{width:90px !important; transition: none !important;}' + 
+                    '.sidebar__info,.sidebar__link span{opacity:0 !important; visibility:hidden !important; display:none !important;}' + 
+                    '#main.container-fluid{padding-left:114px !important; transition: none !important;}' + 
+                    '.header{padding-left:114px !important; transition: none !important;}' + 
+                '</style>');
+            }
+            
+            // Flash önleme için style ekle
+            document.documentElement.style.visibility = 'hidden';
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    document.documentElement.style.visibility = '';
+                }, 50);
+            });
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RehberPOS{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'pos/img/favicon.png' %}">
+    <link rel="shortcut icon" href="{% static 'pos/img/favicon.ico' %}">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Remixicon -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,200..1000&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link href="{% static 'pos/css/style.css' %}" rel="stylesheet">
+    <style>
+        /* Toast Mesaj Stilleri */
+        .toast-container {
+            --toast-max-width: 380px;
+            --toast-padding: 1rem;
+            --toast-border-radius: 16px;
+            --toast-bg-opacity: 0.95;
+        }
+        
+        .toast {
+            min-width: var(--toast-max-width);
+            max-width: var(--toast-max-width);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border-radius: var(--toast-border-radius) !important;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            opacity: 1 !important;
+            border: none !important;
+            position: relative;
+        }
+        
+        .toast .d-flex {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .toast .toast-body {
+            padding: 1.25rem var(--toast-padding);
+            font-weight: 500;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            border-radius: 0;
+            letter-spacing: 0.2px;
+            position: relative;
+        }
+        
+        .toast .btn-close {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            margin: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            opacity: 1;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2;
+        }
+        
+        .toast .btn-close::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.95);
+            transform: rotate(45deg);
+            border-radius: 1px;
+        }
+        
+        .toast .btn-close::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.95);
+            transform: rotate(-45deg);
+            border-radius: 1px;
+        }
+        
+        .toast .btn-close:hover {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .toast .btn-close:focus {
+            box-shadow: none;
+            outline: none;
+        }
+        
+        /* Toast animasyonları */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%) translateY(0);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0) translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%) translateY(0);
+                opacity: 0;
+            }
+        }
+        
+        .toast.show {
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        .toast.hide {
+            animation: slideOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        
+        /* Toast ikon stilleri */
+        .toast i {
+            font-size: 1.35rem;
+            margin-right: 0.875rem;
+            opacity: 0.95;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+        }
+        
+        /* Toast responsive */
+        @media (max-width: 576px) {
+            .toast-container {
+                --toast-max-width: calc(100vw - 2rem);
+                padding: 0.75rem !important;
+                right: 0 !important;
+                left: 0 !important;
+            }
+            
+            .toast {
+                margin: 0 auto 0.75rem;
+                border-radius: 12px !important;
+            }
+            
+            .toast .toast-body {
+                padding: 1rem var(--toast-padding);
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="preload">
+    <!-- HEADER -->
+    <header class="header" id="header">
+        <div class="header__container">
+            <a href="{% url 'pos:index' %}" class="header__logo">
+                <div class="logo-container">
+                    <div class="logo-text">
+                        <span class="logo-text-main">Rehber<span class="logo-text-highlight">POS</span></span>
+                        <span class="logo-text-sub">Restoran Yönetim Sistemi</span>
+                    </div>
+                </div>
+            </a>
+            
+            <button class="header__toggle" id="header-toggle">
+                <i class="ri-menu-line"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar__container">
+            <div class="sidebar__user">
+                <div class="sidebar__img">
+                    <img src="{% static 'pos/img/user-icon.png' %}" alt="user" onerror="this.src='https://via.placeholder.com/50?text=User'">
+                </div>
+
+                <div class="sidebar__info">
+                    <h3>{{ user.username }}</h3>
+                    <span>{{ user.email }}</span>
+                </div>
+            </div>
+
+            <div class="sidebar__content">
+                <div>
+                    <h3 class="sidebar__title">
+                        <span class="sidebar__title-text">RESTORAN</span>
+                        <span class="sidebar__title-line"></span>
+                    </h3>
+
+                    <div class="sidebar__list">
+                        {% if menu_permissions.can_view_index %}
+                        <a href="{% url 'pos:index' %}" class="sidebar__link {% if request.resolver_match.url_name == 'index' %}active-link{% endif %}">
+                            <i class="ri-home-5-fill"></i>
+                            <span>Ana Sayfa</span>
+                        </a>
+                        {% endif %}
+                        
+                        {% if menu_permissions.can_view_tables %}
+                        <a href="{% url 'pos:table_list' %}" class="sidebar__link {% if request.resolver_match.url_name == 'table_list' %}active-link{% endif %}">
+                            <i class="ri-restaurant-line"></i>
+                            <span>Masalar</span>
+                        </a>
+                        {% endif %}
+
+                        {% if menu_permissions.can_view_takeaway %}
+                        <a href="{% url 'pos:takeaway_orders' %}" class="sidebar__link {% if request.resolver_match.url_name == 'takeaway_orders' %}active-link{% endif %}">
+                            <i class="ri-shopping-bag-3-fill"></i>
+                            <span>Paket</span>
+                        </a>
+                        {% endif %}
+
+                        {% if menu_permissions.can_view_orders %}
+                        <a href="{% url 'pos:order_list' %}" class="sidebar__link {% if request.resolver_match.url_name == 'order_list' %}active-link{% endif %}">
+                            <i class="ri-file-list-3-fill"></i>
+                            <span>Siparişler</span>
+                        </a>
+                        {% endif %}
+
+                        {% if menu_permissions.can_view_kitchen %}
+                        <a href="{% url 'pos:kitchen_display' %}" class="sidebar__link {% if request.resolver_match.url_name == 'kitchen_display' %}active-link{% endif %}">
+                            <i class="ri-restaurant-2-fill"></i>
+                            <span>Mutfak</span>
+                        </a>
+                        {% endif %}
+
+                        {% if menu_permissions.can_view_customers %}
+                        <a href="{% url 'pos:customer_list' %}" class="sidebar__link {% if request.resolver_match.url_name == 'customer_list' %}active-link{% endif %}">
+                            <i class="ri-team-fill"></i>
+                            <span>Müşteriler</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="sidebar__title">
+                        <span class="sidebar__title-text">AYARLAR</span>
+                        <span class="sidebar__title-line"></span>
+                    </h3>
+
+                    <div class="sidebar__list">
+                        {% if menu_permissions.can_view_table_management %}
+                        <a href="{% url 'pos:table_management' %}" class="sidebar__link {% if request.resolver_match.url_name == 'table_management' %}active-link{% endif %}">
+                            <i class="ri-settings-2-fill"></i>
+                            <span>Masa Yönetimi</span>
+                        </a>
+
+                        <a href="{% url 'pos:user_list' %}" class="sidebar__link {% if request.resolver_match.url_name == 'user_list' %}active-link{% endif %}">
+                            <i class="ri-user-settings-fill"></i>
+                            <span>Kullanıcılar</span>
+                        </a>
+                        {% endif %}
+
+                        {% if menu_permissions.can_view_products %}
+                        <a href="{% url 'pos:product_list' %}" class="sidebar__link {% if request.resolver_match.url_name == 'product_list' %}active-link{% endif %}">
+                            <i class="ri-store-3-fill"></i>
+                            <span>Ürünler</span>
+                        </a>
+                        {% endif %}
+
+                        {% if menu_permissions.can_view_reports %}
+                        <a href="{% url 'pos:reports' %}" class="sidebar__link {% if request.resolver_match.url_name == 'reports' %}active-link{% endif %}">
+                            <i class="ri-bar-chart-fill"></i>
+                            <span>Raporlar</span>
+                        </a>
+                        {% endif %}
+                        
+                        {% if menu_permissions.can_view_tenant_detail %}
+                        <a href="{% url 'pos:tenant_detail' %}" class="sidebar__link {% if request.resolver_match.url_name == 'tenant_detail' %}active-link{% endif %}">
+                            <i class="ri-building-fill"></i>
+                            <span>İşletme Bilgileri</span>
+                        </a>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar__actions">
+                <!-- Çizgi doğrudan tema butonunun üstünde -->
+                <div class="sidebar__divider sidebar__divider--compact">
+                    <span class="divider-line"></span>
+                </div>
+                
+                <button class="sidebar__action-button">
+                    <a href="#" class="sidebar__link" id="theme-button">
+                        <i class="ri-moon-clear-fill"></i>
+                        <span>Tema</span>
+                    </a>
+                </button>
+                
+                <form method="post" action="{% url 'pos:logout' %}" class="logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="sidebar__action-button">
+                        <div class="sidebar__link">
+                            <i class="ri-logout-box-r-fill"></i>
+                            <span>Çıkış</span>
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid py-4" id="main">
+        <!-- Toast Mesaj Sistemi -->
+        <div class="toast-container position-fixed top-0 end-0 p-4" style="z-index: 1050;">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="toast align-items-center border-0 show mb-3" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                        <div class="d-flex">
+                            <div class="toast-body {% if message.tags %}bg-{{ message.tags }}{% endif %} text-white">
+                                {% if message.tags == 'success' %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% elif message.tags == 'error' or message.tags == 'danger' %}
+                                    <i class="fas fa-exclamation-circle"></i>
+                                {% elif message.tags == 'warning' %}
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                {% elif message.tags == 'info' %}
+                                    <i class="fas fa-info-circle"></i>
+                                {% endif %}
+                                {{ message }}
+                            </div>
+                            <button type="button" class="btn-close btn-close-purple" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if form.errors %}
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <div class="toast align-items-center border-0 show mb-3" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                            <div class="d-flex">
+                                <div class="toast-body bg-danger text-white">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {% if field != '__all__' %}
+                                        {{ field|title }}: {{ error }}
+                                    {% else %}
+                                        {{ error }}
+                                    {% endif %}
+                                </div>
+                                <button type="button" class="btn-close btn-close-purple" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="{% static 'pos/js/main.js' %}"></script>
+    
+    <script>
+        // Global Toast Sistemi
+        const Toast = {
+            init() {
+                // Mevcut toastları başlat
+                this.initExisting();
+                
+                // Global showToast metodunu tanımla
+                window.showToast = this.show.bind(this);
+            },
+            
+            initExisting() {
+                const toastElList = document.querySelectorAll('.toast');
+                toastElList.forEach(toastEl => {
+                    const toast = new bootstrap.Toast(toastEl, {
+                        autohide: true,
+                        delay: 3000
+                    });
+                    toast.show();
+                });
+            },
+            
+            show(type, message) {
+                const container = document.querySelector('.toast-container');
+                if (!container) return;
+                
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center border-0 show mb-3';
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                
+                const icon = type === 'success' ? 'check-circle' :
+                           type === 'danger' ? 'exclamation-circle' :
+                           type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+                
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body bg-${type} text-white">
+                            <i class="fas fa-${icon}"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-purple" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                
+                container.appendChild(toast);
+                const bsToast = new bootstrap.Toast(toast, {
+                    autohide: true,
+                    delay: 3000
+                });
+                bsToast.show();
+                
+                toast.addEventListener('hidden.bs.toast', () => {
+                    toast.remove();
+                });
+            }
+        };
+        
+        // Toast sistemini başlat
+        document.addEventListener('DOMContentLoaded', () => {
+            Toast.init();
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
